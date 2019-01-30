@@ -5,17 +5,17 @@
 """
 import re
 import os
-import argparse
 import logging
+from logging.handlers import TimedRotatingFileHandler
 import paramiko
 import boto3
 import requests
 
-SSH_LANDING_DIR      = os.environ['SSH_LANDING_DIR']
+MAX_BATCH_SIZE       = int(os.environ['MAX_BATCH_SIZE'])
 SSH_REMOTE_HOST      = os.environ['SSH_REMOTE_HOST']
 SSH_REMOTE_USER      = os.environ['SSH_REMOTE_USER']
 SSH_PRIVATE_KEY      = os.environ['SSH_PRIVATE_KEY']
-MAX_BATCH_SIZE       = int(os.environ['MAX_BATCH_SIZE'])
+SSH_LANDING_DIR      = os.environ['SSH_LANDING_DIR']
 BUCKET_NAME          = os.environ['S3_BUCKET_NAME']
 BUCKET_KEY_PREFIX    = os.environ['S3_KEY_PREFIX']
 S3_ACCESS_KEY_ID     = os.environ['S3_ACCESS_KEY_ID']
@@ -27,6 +27,7 @@ DOWNLOAD_DIR         = '/NATS/data/nats'
 STAGING_DIR          = '/NATS/stage/nats'
 SCRIPTS_DIR          = '/NATS/scripts'
 QUARANTINE_DIR       = '/NATS/quarantine/nats'
+LOG_FILE             = '/NATS/log/sftp_nats.log'
 
 
 def ssh_login(in_host, in_user, in_keyfile):
@@ -35,7 +36,7 @@ def ssh_login(in_host, in_user, in_keyfile):
     """
     logger = logging.getLogger()
     ssh = paramiko.SSHClient()
-    ssh.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())  # This line can be removed when the host is added to the known_hosts file
+    ssh.set_missing_host_key_policy(paramiko.client.AutoAddPolicy())
     privkey = paramiko.RSAKey.from_private_key_file(in_keyfile)
     try:
         ssh.connect(in_host, username=in_user, pkey=privkey)
@@ -71,25 +72,14 @@ def main():
     """
     Main function
     """
-    parser = argparse.ArgumentParser(description='NATS SFTP Downloader')
-    parser.add_argument('-D', '--DEBUG', default=False, action='store_true', help='Debug mode logging')
-    args = parser.parse_args()
-    if args.DEBUG:
-        logging.basicConfig(
-            filename='/NATS/log/sftp_nats.log',
-            format="%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s",
-            datefmt='%Y-%m-%d %H:%M:%S',
-            level=logging.DEBUG
-        )
-    else:
-        logging.basicConfig(
-            filename='/NATS/log/sftp_nats.log',
-            format="%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s",
-            datefmt='%Y-%m-%d %H:%M:%S',
-            level=logging.INFO
-        )
-
+    logging.basicConfig(
+        format="%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s",
+        datefmt='%Y-%m-%d %H:%M:%S',
+        level=logging.INFO
+    )
     logger = logging.getLogger()
+    loghandler = TimedRotatingFileHandler(LOG_FILE, when="midnight", interval=1, backupCount=7)
+    logger.addHandler(loghandler)
     logger.info("Starting")
 
     # Main
@@ -104,7 +94,8 @@ def main():
 
     try:
         sftp.chdir(SSH_LANDING_DIR)
-        files = sorted(sftp.listdir(), key=lambda x: sftp.stat(x).st_mtime)  # sort by modified date and get only limited batch
+        # sort by modified date and get only limited batch
+        files = sorted(sftp.listdir(), key=lambda x: sftp.stat(x).st_mtime)
         for file_json in files:
             match = re.search('^\[-PRMD=EG-ADMD=ICAO-C=XX-;MTA-EGGG-1-MTCU_[A-Z0-9]{16}.*\].json$', file_json, re.I)
             download = True
