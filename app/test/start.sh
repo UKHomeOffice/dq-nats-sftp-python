@@ -74,7 +74,7 @@ function clamav_api {
 
 function nats {
   run=$(docker build -t python/nats --rm ../. && \
-        docker run \
+        docker run --rm \
         --name nats \
         -e SSH_REMOTE_HOST='sftp-server' \
         -e SSH_REMOTE_USER='test' \
@@ -95,15 +95,15 @@ function nats {
 }
 
 function create_ok_file {
-  RAND=$(openssl rand -hex 30 | tr "[:lower:]" "[:upper:]" | cut -c -16)
-  run=$(echo "{\n  'Test': 'data',\n  'in': 'file'\n}" > "$mountpoint/[-PRMD=EG-ADMD=ICAO-C=XX-;MTA-EGGG-1-MTCU_$RAND].json")
-  echo "Created OK test file: [-PRMD=EG-ADMD=ICAO-C=XX-;MTA-EGGG-1-MTCU_$RAND].json"
+  rand=$(openssl rand -hex 30 | tr "[:lower:]" "[:upper:]" | cut -c -16)
+  run=$(echo "{\n  'Test': 'data',\n  'in': 'file'\n}" > "$mountpoint/[-PRMD=EG-ADMD=ICAO-C=XX-;MTA-EGGG-1-MTCU_$rand].json")
+  echo "Created OK test file: [-PRMD=EG-ADMD=ICAO-C=XX-;MTA-EGGG-1-MTCU_$rand].json"
 }
 
 function create_virus_file {
-  RAND=$(openssl rand -hex 30 | tr "[:lower:]" "[:upper:]" | cut -c -16)
-  run=$(cat ./eicar.com > "$mountpoint/[-PRMD=EG-ADMD=ICAO-C=XX-;MTA-EGGG-1-MTCU_$RAND].json")
-  echo "Created FAIL test file: [-PRMD=EG-ADMD=ICAO-C=XX-;MTA-EGGG-1-MTCU_$RAND].json"
+  rand=$(openssl rand -hex 30 | tr "[:lower:]" "[:upper:]" | cut -c -16)
+  run=$(cat ./eicar.com > "$mountpoint/[-PRMD=EG-ADMD=ICAO-C=XX-;MTA-EGGG-1-MTCU_$rand].json")
+  echo "Created FAIL test file: [-PRMD=EG-ADMD=ICAO-C=XX-;MTA-EGGG-1-MTCU_$rand].json"
 }
 
 function main {
@@ -124,12 +124,13 @@ function main {
   nats
   echo "Done."
   echo "********************************************"
-  echo "Generating test files."
-  echo "Creating OK test file and wait 5 seconds so that NATS container can process it. Waiting..."
+  echo "Generating test files"
+  echo "********************************************"
+  echo "Creating OK test file"
   create_ok_file
   echo "Done."
   echo "********************************************"
-  echo "Creating Virus test file. Waiting..."
+  echo "Creating Virus test file"
   create_virus_file
   echo "Done."
   echo "********************************************"
