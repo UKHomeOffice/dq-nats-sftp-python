@@ -72,13 +72,19 @@ def main():
     """
     Main function
     """
+    logformat = '%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s'
+    form = logging.Formatter(logformat)
     logging.basicConfig(
-        format="%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s",
+        format=logformat,
         datefmt='%Y-%m-%d %H:%M:%S',
         level=logging.INFO
     )
     logger = logging.getLogger()
+    if logger.hasHandlers():
+        logger.handlers.clear()
     loghandler = TimedRotatingFileHandler(LOG_FILE, when="midnight", interval=1, backupCount=7)
+    loghandler.suffix = "%Y-%m-%d"
+    loghandler.setFormatter(form)
     logger.addHandler(loghandler)
     logger.info("Starting")
 
