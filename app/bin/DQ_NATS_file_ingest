@@ -1,0 +1,25 @@
+#!/usr/bin/env python
+
+# This script runs the test.py script at a time interval that is set.
+#
+# Script requirements:
+# - the environment variable PROCESS_INTERVAL must be set.
+# - the Python package schedule must be imported.
+
+import time
+import schedule
+
+from scripts import settings
+from scripts import DQ_NATS_file_ingest
+
+def start():
+    """Main function that runs every (x) seconds based on the schedule."""
+    DQ_NATS_file_ingest.main()
+
+
+if __name__ == "__main__":
+    schedule.every(settings.PROCESS_INTERVAL).seconds.do(start)
+
+    while True:
+        schedule.run_pending()
+        time.sleep(1)
