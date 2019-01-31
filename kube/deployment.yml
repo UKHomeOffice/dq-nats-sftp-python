@@ -1,0 +1,148 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  name: dq-nats-data-ingest
+spec:
+  replicas: 1
+  revisionHistoryLimit: 3
+  template:
+    metadata:
+      labels:
+        name: dq-nats-data-ingest
+    spec:
+      securityContext:
+        fsGroup: 1000
+      volumes:
+      - name: sftp-key
+        secret:
+          secretName: dq-nats-data-ingest
+          items:
+          - key: SSH_PRIVATE_KEY
+            path: id_rsa
+            mode: 400
+      - name: nats-volume
+        persistentVolumeClaim:
+          claimName: nats-volume
+      containers:
+
+      - name: dq-nats-data-ingest
+        image: quay.io/ukhomeofficedigital/dq-nats-sftp-python:{{.DRONE_COMMIT_SHA}}
+        imagePullPolicy: Always
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+        resources:
+          limits:
+            cpu: {{.NATS_CPU_LIMIT}}
+            memory: {{.NATS_RAM_LIMIT}}
+          requests:
+            cpu: {{.NATS_CPU_REQUEST}}
+            memory: {{.NATS_RAM_REQUEST}}
+        env:
+          - name: SSH_REMOTE_HOST
+            valueFrom:
+              secretKeyRef:
+                name: dq-nats-data-ingest
+                key: SSH_REMOTE_HOST
+          - name: SSH_REMOTE_USER
+            valueFrom:
+              secretKeyRef:
+                name: dq-nats-data-ingest
+                key: SSH_REMOTE_USER
+          - name: SSH_PRIVATE_KEY_PATH
+            valueFrom:
+              secretKeyRef:
+                name: dq-nats-data-ingest
+                key: SSH_PRIVATE_KEY_PATH
+          - name: SSH_LANDING_DIR
+            valueFrom:
+              secretKeyRef:
+                name: dq-nats-data-ingest
+                key: SSH_LANDING_DIR
+          - name: S3_BUCKET_NAME
+            valueFrom:
+              secretKeyRef:
+                name: dq-nats-data-ingest
+                key: S3_BUCKET_NAME
+          - name: S3_KEY_PREFIX
+            valueFrom:
+              secretKeyRef:
+                name: dq-nats-data-ingest
+                key: S3_KEY_PREFIX
+          - name: S3_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: dq-nats-data-ingest
+                key: S3_ACCESS_KEY_ID
+          - name: S3_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: dq-nats-data-ingest
+                key: S3_SECRET_ACCESS_KEY
+          - name: CLAMAV_URL
+            value: "127.0.0.1"
+          - name: CLAMAV_PORT
+            value: "8080"
+        volumeMounts:
+        - name: sftp-key
+          mountPath: /key
+          readOnly: true
+        - name: nats-volume
+          mountPath: /NATS
+
+      - name: clamav-api
+        image: quay.io/ukhomeofficedigital/clamav-rest
+        imagePullPolicy: Always
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+        resources:
+          limits:
+            cpu: {{.CLAMAV_CPU_LIMIT}}
+            memory: {{.CLAMAV_RAM_LIMIT}}
+          requests:
+            cpu: {{.CLAMAV_CPU_REQUEST}}
+            memory: {{.CLAMAV_RAM_REQUEST}}
+        env:
+        - name: HOST
+          value: localhost
+        - name: PORT
+          value: '3310'
+        ports:
+        - containerPort: 8080
+          name: api
+          protocol: TCP
+        livenessProbe:
+          exec:
+            command:
+            - /var/clamav-rest/healthcheck.sh
+          initialDelaySeconds: 60
+          timeoutSeconds: 10
+          periodSeconds: 30
+          failureThreshold: 10
+
+      - name: clamav
+        image: quay.io/ukhomeofficedigital/clamav
+        imagePullPolicy: Always
+        securityContext:
+          runAsNonRoot: true
+          runAsUser: 1000
+        resources:
+          limits:
+            cpu: {{.CLAMAV_CPU_LIMIT}}
+            memory: {{.CLAMAV_RAM_LIMIT}}
+          requests:
+            cpu: {{.CLAMAV_CPU_REQUEST}}
+            memory: {{.CLAMAV_RAM_REQUEST}}
+        ports:
+        - containerPort: 3310
+          name: api
+          protocol: TCP
+        livenessProbe:
+          exec:
+            command:
+            - /readyness.sh
+          initialDelaySeconds: 90
+          timeoutSeconds: 10
+          periodSeconds: 30
+          failureThreshold: 10

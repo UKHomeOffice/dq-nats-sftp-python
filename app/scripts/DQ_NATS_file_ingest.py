@@ -14,7 +14,7 @@ import requests
 MAX_BATCH_SIZE       = int(os.environ['MAX_BATCH_SIZE'])
 SSH_REMOTE_HOST      = os.environ['SSH_REMOTE_HOST']
 SSH_REMOTE_USER      = os.environ['SSH_REMOTE_USER']
-SSH_PRIVATE_KEY      = os.environ['SSH_PRIVATE_KEY']
+SSH_PRIVATE_KEY      = os.environ['SSH_PRIVATE_KEY_PATH']
 SSH_LANDING_DIR      = os.environ['SSH_LANDING_DIR']
 BUCKET_NAME          = os.environ['S3_BUCKET_NAME']
 BUCKET_KEY_PREFIX    = os.environ['S3_KEY_PREFIX']
