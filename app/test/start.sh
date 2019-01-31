@@ -78,7 +78,7 @@ function nats {
         --name nats \
         -e SSH_REMOTE_HOST='sftp-server' \
         -e SSH_REMOTE_USER='test' \
-        -e SSH_PRIVATE_KEY='/home/runner/.ssh/id_rsa' \
+        -e SSH_PRIVATE_KEY_PATH='/home/runner/.ssh/id_rsa' \
         -e SSH_LANDING_DIR='test' \
         -e S3_BUCKET_NAME=$bucketname \
         -e S3_KEY_PREFIX=$keyprefix \
