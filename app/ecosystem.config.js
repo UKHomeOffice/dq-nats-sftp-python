@@ -21,8 +21,12 @@ module.exports = {
         S3_ACCESS_KEY_ID : process.argv[11],
         S3_SECRET_ACCESS_KEY : process.argv[12],
         S3_REGION_NAME : "eu-west-2",
-        CLAMAV_URL : process.argv[13],
-        CLAMAV_PORT : process.argv[14]
+        GA_S3_BUCKET_NAME: process.argv[13],
+        GA_S3_KEY_PREFIX: process.argv[14],
+        GA_S3_ACCESS_KEY_ID: process.argv[15],
+        GA_S3_SECRET_ACCESS_KEY: process.argv[16],
+        CLAMAV_URL : process.argv[17],
+        CLAMAV_PORT : process.argv[18]
       }
     }
   ]

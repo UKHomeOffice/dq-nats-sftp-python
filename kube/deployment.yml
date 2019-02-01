@@ -79,6 +79,26 @@ spec:
               secretKeyRef:
                 name: dq-nats-data-ingest
                 key: S3_SECRET_ACCESS_KEY
+          - name: GA_S3_BUCKET_NAME
+            valueFrom:
+              secretKeyRef:
+                name: dq-nats-data-ingest
+                key: GA_S3_BUCKET_NAME
+          - name: GA_S3_KEY_PREFIX
+            valueFrom:
+              secretKeyRef:
+                name: dq-nats-data-ingest
+                key: GA_S3_KEY_PREFIX
+          - name: GA_S3_ACCESS_KEY_ID
+            valueFrom:
+              secretKeyRef:
+                name: dq-nats-data-ingest
+                key: GA_S3_ACCESS_KEY_ID
+          - name: GA_S3_SECRET_ACCESS_KEY
+            valueFrom:
+              secretKeyRef:
+                name: dq-nats-data-ingest
+                key: GA_S3_SECRET_ACCESS_KEY
           - name: CLAMAV_URL
             value: "127.0.0.1"
           - name: CLAMAV_PORT
