@@ -9,29 +9,37 @@ set -e
 
 # Set variables
 
-# Used by sftp_server function
+# SFTP connectivity
 echo "********************************************"
 echo "Setup sftp-server container variables:"
 echo "********************************************"
 echo "Enter pubkey location (full file path) and press [ENTER]: "
 read pubkey
+echo "Enter privkey location (full file path) and press [ENTER]: "
+read privkey
 echo "Enter mountpoint location (full file path) and press [ENTER]: "
 read mountpoint
 
-# Used by nats function
+# S3 credentials
 echo "********************************************"
 echo "Setup NATS container variables"
 echo "********************************************"
 echo "Enter bucketname and press [ENTER]: "
 read bucketname
+echo "Enter gabucketname and press [ENTER]: "
+read gabucketname
 echo "Enter keyprefix and press [ENTER]: "
 read keyprefix
+echo "Enter gakeyprefix and press [ENTER]: "
+read gakeyprefix
 echo "Enter awskeyid and press [ENTER]: "
 read awskeyid
+echo "Enter gaawskeyid and press [ENTER]: "
+read gaawskeyid
 echo "Enter awssecret and press [ENTER]: "
 read awssecret
-echo "Enter privkey location (full file path) and press [ENTER]: "
-read privkey
+echo "Enter gaawssecret and press [ENTER]: "
+read gaawssecret
 
 # Build SFTP container
 
@@ -84,6 +92,10 @@ function nats {
         -e S3_KEY_PREFIX=$keyprefix \
         -e S3_ACCESS_KEY_ID=$awskeyid \
         -e S3_SECRET_ACCESS_KEY=$awssecret \
+        -e GA_S3_BUCKET_NAME=$gabucketname \
+        -e GA_S3_KEY_PREFIX=$gakeyprefix \
+        -e GA_S3_ACCESS_KEY_ID=$gaawskeyid \
+        -e GA_S3_SECRET_ACCESS_KEY=$gaawssecret \
         -e CLAMAV_URL='clamav-api' \
         -e CLAMAV_PORT='8080' \
         -v $privkey:/home/runner/.ssh/id_rsa:ro \

@@ -11,23 +11,27 @@ import paramiko
 import boto3
 import requests
 
-MAX_BATCH_SIZE       = int(os.environ['MAX_BATCH_SIZE'])
-SSH_REMOTE_HOST      = os.environ['SSH_REMOTE_HOST']
-SSH_REMOTE_USER      = os.environ['SSH_REMOTE_USER']
-SSH_PRIVATE_KEY      = os.environ['SSH_PRIVATE_KEY_PATH']
-SSH_LANDING_DIR      = os.environ['SSH_LANDING_DIR']
-BUCKET_NAME          = os.environ['S3_BUCKET_NAME']
-BUCKET_KEY_PREFIX    = os.environ['S3_KEY_PREFIX']
-S3_ACCESS_KEY_ID     = os.environ['S3_ACCESS_KEY_ID']
-S3_SECRET_ACCESS_KEY = os.environ['S3_SECRET_ACCESS_KEY']
-S3_REGION_NAME       = os.environ['S3_REGION_NAME']
-BASE_URL             = os.environ['CLAMAV_URL']
-BASE_PORT            = os.environ['CLAMAV_PORT']
-DOWNLOAD_DIR         = '/NATS/data/nats'
-STAGING_DIR          = '/NATS/stage/nats'
-SCRIPTS_DIR          = '/NATS/scripts'
-QUARANTINE_DIR       = '/NATS/quarantine/nats'
-LOG_FILE             = '/NATS/log/sftp_nats.log'
+MAX_BATCH_SIZE          = int(os.environ['MAX_BATCH_SIZE'])
+SSH_REMOTE_HOST         = os.environ['SSH_REMOTE_HOST']
+SSH_REMOTE_USER         = os.environ['SSH_REMOTE_USER']
+SSH_PRIVATE_KEY         = os.environ['SSH_PRIVATE_KEY_PATH']
+SSH_LANDING_DIR         = os.environ['SSH_LANDING_DIR']
+BUCKET_NAME             = os.environ['S3_BUCKET_NAME']
+BUCKET_KEY_PREFIX       = os.environ['S3_KEY_PREFIX']
+S3_ACCESS_KEY_ID        = os.environ['S3_ACCESS_KEY_ID']
+S3_SECRET_ACCESS_KEY    = os.environ['S3_SECRET_ACCESS_KEY']
+S3_REGION_NAME          = os.environ['S3_REGION_NAME']
+GA_BUCKET_NAME          = os.environ['GA_S3_BUCKET_NAME']
+GA_BUCKET_KEY_PREFIX    = os.environ['GA_S3_KEY_PREFIX']
+GA_S3_ACCESS_KEY_ID     = os.environ['GA_S3_ACCESS_KEY_ID']
+GA_S3_SECRET_ACCESS_KEY = os.environ['GA_S3_SECRET_ACCESS_KEY']
+BASE_URL                = os.environ['CLAMAV_URL']
+BASE_PORT               = os.environ['CLAMAV_PORT']
+DOWNLOAD_DIR            = '/NATS/data/nats'
+STAGING_DIR             = '/NATS/stage/nats'
+SCRIPTS_DIR             = '/NATS/scripts'
+QUARANTINE_DIR          = '/NATS/quarantine/nats'
+LOG_FILE                = '/NATS/log/sftp_nats.log'
 
 
 def ssh_login(in_host, in_user, in_keyfile):
@@ -152,13 +156,21 @@ def main():
         aws_secret_access_key=S3_SECRET_ACCESS_KEY,
         region_name=S3_REGION_NAME
     )
+    boto_ga_s3_session = boto3.Session(
+        aws_access_key_id=GA_S3_ACCESS_KEY_ID,
+        aws_secret_access_key=GA_S3_SECRET_ACCESS_KEY,
+        region_name=S3_REGION_NAME
+    )
     if processed_nats_file_list:
         for filename in processed_nats_file_list:
             s3_conn = boto_s3_session.client("s3")
+            ga_s3_conn = boto_ga_s3_session.client("s3")
             full_filepath = os.path.join(DOWNLOAD_DIR, filename)
-            logger.info("Copying %s to S3", filename)
             if os.path.isfile(full_filepath):
+                logger.info("Copying %s to DQ S3", filename)
                 s3_conn.upload_file(full_filepath, BUCKET_NAME, BUCKET_KEY_PREFIX + "/" + filename)
+                logger.info("Copying %s to GA S3", filename)
+                ga_s3_conn.upload_file(full_filepath, GA_BUCKET_NAME, GA_BUCKET_KEY_PREFIX + "/" + filename, ExtraArgs={"ServerSideEncryption": "aws:kms"})
                 os.remove(full_filepath)
                 logger.info("Deleting local file: %s", filename)
                 uploadcount += 1
