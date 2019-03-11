@@ -5,7 +5,7 @@ import os
 
 """DQ NATS file ingest"""
 PROCESS_INTERVAL        = int(os.environ.get('PROCESS_INTERVAL', 60))
-MAX_BATCH_SIZE          = int(os.environ.get('MAX_BATCH_SIZE', 1000))
+MAX_BATCH_SIZE          = int(os.environ.get('MAX_BATCH_SIZE', 25))
 SSH_REMOTE_HOST         = os.environ.get('SSH_REMOTE_HOST')
 SSH_REMOTE_USER         = os.environ.get('SSH_REMOTE_USER')
 SSH_PRIVATE_KEY         = os.environ.get('SSH_PRIVATE_KEY')
