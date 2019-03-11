@@ -11,7 +11,7 @@ module.exports = {
       interpreter: "python",
       env: {
         PROCESS_INTERVAL: 60,
-        MAX_BATCH_SIZE: 1000,
+        MAX_BATCH_SIZE: 5000,
         SSH_REMOTE_HOST : process.argv[5],
         SSH_REMOTE_USER : process.argv[6],
         SSH_PRIVATE_KEY : process.argv[7],

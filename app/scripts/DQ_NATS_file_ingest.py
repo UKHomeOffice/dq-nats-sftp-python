@@ -90,6 +90,9 @@ def main():
     loghandler.suffix = "%Y-%m-%d"
     loghandler.setFormatter(form)
     logger.addHandler(loghandler)
+    consolehandler = logging.StreamHandler()
+    consolehandler.setFormatter(form)
+    logger.addHandler(consolehandler)
     logger.info("Starting")
 
     # Main
