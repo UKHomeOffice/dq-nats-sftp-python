@@ -37,7 +37,7 @@ RUN pip install --no-cache-dir -r /tmp/NATS/scripts/packages.txt
 # Install PM2
 RUN apt-get update \
     && apt-get upgrade -y \
-    && curl -sL https://deb.nodesource.com/setup_8.x | bash - \
+    && curl -sL https://deb.nodesource.com/setup_11.x | bash - \
     && apt-get install -y nodejs \
     && npm install -g pm2
 
