@@ -1,4 +1,4 @@
-FROM python:3
+FROM quay.io/ukhomeofficedigital/centos-base:v0.5.12
 
 ENV USERMAP_UID 1000
 ENV PYTHONPATH="$PYTHONPATH:/NATS"
@@ -31,14 +31,24 @@ RUN groupadd -r runner && \
     chown -R runner:runner /home/runner/.ssh
 
 # Install script dependencies
-RUN apt-get update -y && apt-get upgrade -y
-RUN pip install --no-cache-dir -r /tmp/NATS/scripts/packages.txt
+RUN yum update -y
+RUN yum install -y wget make gcc openssl-devel zlib-devel pcre-devel bzip2-devel libffi-devel epel-release && \
+    cd /usr/src && \
+    wget https://www.python.org/ftp/python/3.7.2/Python-3.7.2.tgz && \
+    tar xzf Python-3.7.2.tgz && \
+    cd Python-3.7.2 && \
+    ./configure --enable-optimizations && \
+    make altinstall && \
+    rm /usr/src/Python-3.7.2.tgz && \
+    echo "alias python='/usr/bin/python3.7'" >> /home/runner/.bashrc && \
+    chown runner:runner /home/runner/.bashrc && \
+    chmod +x /home/runner/.bashrc && \
+    source /home/runner/.bashrc
+RUN python3.7 -m pip install --no-cache-dir -r /tmp/NATS/scripts/packages.txt
 
 # Install PM2
-RUN apt-get update \
-    && apt-get upgrade -y \
-    && curl -sL https://deb.nodesource.com/setup_11.x | bash - \
-    && apt-get install -y nodejs \
+RUN curl -sL https://rpm.nodesource.com/setup_11.x | bash - \
+    && yum install -y nodejs \
     && npm install -g pm2
 
 VOLUME ["/NATS"]

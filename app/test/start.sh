@@ -82,7 +82,7 @@ function clamav_api {
 
 function nats {
   run=$(docker build -t python/nats --rm ../. && \
-        docker run --rm \
+        docker run \
         --name nats \
         -e SSH_REMOTE_HOST='sftp-server' \
         -e SSH_REMOTE_USER='test' \
