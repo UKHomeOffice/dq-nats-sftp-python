@@ -32,24 +32,26 @@ RUN groupadd -r runner && \
 
 # Install script dependencies
 RUN yum update -y
-RUN yum install -y wget make gcc openssl-devel zlib-devel pcre-devel bzip2-devel libffi-devel epel-release && \
-    cd /usr/src && \
+RUN yum install -y wget make gcc openssl-devel zlib-devel pcre-devel bzip2-devel libffi-devel epel-release
+
+# Install Python3.7.2 and pip modules
+RUN cd /usr/bin && \
     wget https://www.python.org/ftp/python/3.7.2/Python-3.7.2.tgz && \
     tar xzf Python-3.7.2.tgz && \
     cd Python-3.7.2 && \
     ./configure --enable-optimizations && \
     make altinstall && \
-    rm /usr/src/Python-3.7.2.tgz && \
-    echo "alias python='/usr/bin/python3.7'" >> /home/runner/.bashrc && \
-    chown runner:runner /home/runner/.bashrc && \
-    chmod +x /home/runner/.bashrc && \
-    source /home/runner/.bashrc
-RUN python3.7 -m pip install --no-cache-dir -r /tmp/NATS/scripts/packages.txt
+    alternatives --install /usr/bin/python python /usr/local/bin/python3.7 1
+RUN python -m pip install --no-cache-dir -r /tmp/NATS/scripts/packages.txt
+
+# Fix yum installer with Python3.7 running as a global default
+RUN sed -i '/#!\/usr\/bin\/python/c\#!\/usr\/bin\/python2.7' /usr/bin/yum && \
+    sed -i '/#! \/usr\/bin\/python/c\#! \/usr\/bin\/python2.7' /usr/libexec/urlgrabber-ext-down
 
 # Install PM2
-RUN curl -sL https://rpm.nodesource.com/setup_11.x | bash - \
-    && yum install -y nodejs \
-    && npm install -g pm2
+RUN curl -sL https://rpm.nodesource.com/setup_11.x | bash - && \
+    yum install -y nodejs && \
+    npm install -g pm2
 
 VOLUME ["/NATS"]
 RUN chown -R runner:runner /NATS
