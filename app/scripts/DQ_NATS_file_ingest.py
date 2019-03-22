@@ -130,7 +130,6 @@ def main():
                     if downloadtostagecount >= MAX_BATCH_SIZE:
                         logger.info("Max batch size reached (%s)", MAX_BATCH_SIZE)
                         break
-        logger.info("Downloaded %s files", downloadtostagecount)
         sftp.close()
         ssh.close()
         # end for
