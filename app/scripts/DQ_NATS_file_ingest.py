@@ -5,6 +5,7 @@
 """
 import re
 import os
+import datetime
 import logging
 from logging.handlers import TimedRotatingFileHandler
 import paramiko
@@ -49,24 +50,23 @@ def ssh_login(in_host, in_user, in_keyfile):
     return ssh
 
 
-def run_virus_scan(filename):
+def run_virus_scan(directory):
     """
     Send a file to scanner API
     """
     logger = logging.getLogger()
-    logger.info("Virus Scanning %s folder", filename)
-    # do quarantine move using via the virus scanner
-    file_list = os.listdir(filename)
+    logger.info("Virus Scanning %s folder", directory)
+    file_list = os.listdir(directory)
     for scan_file in file_list:
         processing = os.path.join(STAGING_DIR, scan_file)
         with open(processing, 'rb') as scan:
             response = requests.post('http://' + BASE_URL + ':' + BASE_PORT + '/scan', files={'file': scan}, data={'name': scan_file})
             if not 'Everything ok : true' in response.text:
-                logger.error('Virus scan FAIL: %s is dangerous!', scan_file)
+                logger.warning('Virus scan FAIL: %s is dangerous!', scan_file)
                 file_quarantine = os.path.join(QUARANTINE_DIR, scan_file)
-                logger.info('Move %s from staging to quarantine %s', processing, file_quarantine)
+                logger.warning('Move %s from staging to quarantine %s', processing, file_quarantine)
                 os.rename(processing, file_quarantine)
-                return False
+                continue
             else:
                 logger.info('Virus scan OK: %s', scan_file)
     return True
@@ -149,7 +149,7 @@ def main():
             except Exception:
                 logger.exception("Could not run virus scan on %s", obj)
                 break
-    logger.info("Downloaded %s files", downloadcount)
+    logger.info("Processed %s files", downloadcount)
 
 # Move files to S3
     logger.info("Starting to move files to S3")
@@ -171,9 +171,16 @@ def main():
             full_filepath = os.path.join(DOWNLOAD_DIR, filename)
             if os.path.isfile(full_filepath):
                 logger.info("Copying %s to DQ S3", filename)
-                s3_conn.upload_file(full_filepath, BUCKET_NAME, BUCKET_KEY_PREFIX + "/" + filename)
+                time = datetime.datetime.now()
+                dq_bucket_key_timestamp = time.strftime("%Y/%m/%d")
+                s3_conn.upload_file(full_filepath,
+                                    BUCKET_NAME,
+                                    BUCKET_KEY_PREFIX + "/" + dq_bucket_key_timestamp + "/" + filename)
                 logger.info("Copying %s to GA S3", filename)
-                ga_s3_conn.upload_file(full_filepath, GA_BUCKET_NAME, GA_BUCKET_KEY_PREFIX + "/" + filename, ExtraArgs={"ServerSideEncryption": "aws:kms"})
+                ga_s3_conn.upload_file(full_filepath,
+                                       GA_BUCKET_NAME,
+                                       GA_BUCKET_KEY_PREFIX + "/" + filename,
+                                       ExtraArgs={"ServerSideEncryption": "aws:kms"})
                 os.remove(full_filepath)
                 logger.info("Deleting local file: %s", filename)
                 uploadcount += 1
