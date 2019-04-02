@@ -49,7 +49,7 @@ RUN sed -i '/#!\/usr\/bin\/python/c\#!\/usr\/bin\/python2.7' /usr/bin/yum && \
     sed -i '/#! \/usr\/bin\/python/c\#! \/usr\/bin\/python2.7' /usr/libexec/urlgrabber-ext-down
 
 # Install PM2
-RUN curl -sL https://rpm.nodesource.com/setup_11.x | bash - && \
+RUN curl -sL https://raw.githubusercontent.com/nodesource/distributions/master/rpm/setup_11.x -o setup_11.x && bash setup_11.x && rm setup_11.x && \
     yum install -y nodejs && \
     npm install -g pm2
 
