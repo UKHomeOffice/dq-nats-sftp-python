@@ -40,6 +40,8 @@ echo "Enter awssecret and press [ENTER]: "
 read awssecret
 echo "Enter gaawssecret and press [ENTER]: "
 read gaawssecret
+echo "Enter webhook and press [ENTER]: "
+read webhook
 
 # Build SFTP container
 
@@ -96,6 +98,7 @@ function nats {
         -e GA_S3_KEY_PREFIX=$gakeyprefix \
         -e GA_S3_ACCESS_KEY_ID=$gaawskeyid \
         -e GA_S3_SECRET_ACCESS_KEY=$gaawssecret \
+        -e SLACK_WEBHOOK=$webhook \
         -e CLAMAV_URL='clamav-api' \
         -e CLAMAV_PORT='8080' \
         -v $privkey:/home/runner/.ssh/id_rsa:ro \

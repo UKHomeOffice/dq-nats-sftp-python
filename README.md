@@ -12,7 +12,7 @@ Tasks include:
 ## Dependencies
 
 - Docker
-- Python3
+- Python3.7
 - Drone
 - AWS CLI
 - AWS Keys with PUT access to S3
@@ -29,7 +29,7 @@ Tasks include:
     - *DQ_NATS_file_ingest*: Python script used with PM2 to declare imported files to PM2 at runtime
   - **scripts/**
     - *__init__.py*: declare Python module import
-    - *DQ_NATS_file_ingest.py*: Python3 script running within the container
+    - *DQ_NATS_file_ingest.py*: Python3.7 script running within the container
     - *settings.py*: declare variables passed to the *DQ_NATS_file_ingest.py* file at runtime
   - **test/**
     - *start.sh*: Download, build and run Docker containers
@@ -49,7 +49,7 @@ The POD consists of 3 (three) Docker containers responsible for handling data.
 
 | Container Name | Function | Language | Exposed port | Managed by |
 | :--- | :---: | :---: | ---: | --- |
-| dq-nats-data-ingest | Data pipeline app| Python3 | N/A | DQ Devops |
+| dq-nats-data-ingest | Data pipeline app| Python3.7 | N/A | DQ Devops |
 | clamav-api | API for virus checks | N/A | 8080 |ACP |
 | clamav | Database for virus checks | N/A | 3310 |ACP |
 
@@ -85,6 +85,7 @@ The script will require the following variables passed in at runtime.
 | keyprefix | prefix | True | S3 folder name |
 | awskeyid | ABCD | True | AWS access key ID |
 | awssecret | abcdb1234 | True | AWS Secret access key |
+| webhook | https://hooks.slack.com/services/ABCDE12345 | True | Slack Webhook URL |
 
 - Components:
   - SFTP container

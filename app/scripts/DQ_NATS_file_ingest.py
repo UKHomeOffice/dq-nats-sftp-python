@@ -5,9 +5,12 @@
 """
 import re
 import os
+import sys
 import datetime
 import logging
 from logging.handlers import TimedRotatingFileHandler
+import json
+import urllib.request
 import paramiko
 import boto3
 import requests
@@ -28,6 +31,7 @@ GA_S3_ACCESS_KEY_ID     = os.environ['GA_S3_ACCESS_KEY_ID']
 GA_S3_SECRET_ACCESS_KEY = os.environ['GA_S3_SECRET_ACCESS_KEY']
 BASE_URL                = os.environ['CLAMAV_URL']
 BASE_PORT               = os.environ['CLAMAV_PORT']
+SLACK_WEBHOOK           = os.environ['SLACK_WEBHOOK']
 DOWNLOAD_DIR            = '/NATS/data/nats'
 STAGING_DIR             = '/NATS/stage/nats'
 SCRIPTS_DIR             = '/NATS/scripts'
@@ -45,8 +49,12 @@ def ssh_login(in_host, in_user, in_keyfile):
     privkey = paramiko.RSAKey.from_private_key_file(in_keyfile)
     try:
         ssh.connect(in_host, username=in_user, pkey=privkey)
-    except Exception:
-        logger.exception('SSH CONNECT ERROR')
+    except Exception as err:
+        logger.error('SSH CONNECT ERROR')
+        logger.exception(str(err))
+        error = str(err)
+        send_message_to_slack(error)
+        sys.exit(1)
     return ssh
 
 
@@ -63,6 +71,8 @@ def run_virus_scan(directory):
             response = requests.post('http://' + BASE_URL + ':' + BASE_PORT + '/scan', files={'file': scan}, data={'name': scan_file})
             if not 'Everything ok : true' in response.text:
                 logger.warning('Virus scan FAIL: %s is dangerous!', scan_file)
+                warning = ("Virus scan FAIL: " + scan_file + " is dangerous!")
+                send_message_to_slack(str(warning))
                 file_quarantine = os.path.join(QUARANTINE_DIR, scan_file)
                 logger.warning('Move %s from staging to quarantine %s', processing, file_quarantine)
                 os.rename(processing, file_quarantine)
@@ -71,11 +81,52 @@ def run_virus_scan(directory):
                 logger.info('Virus scan OK: %s', scan_file)
     return True
 
+def send_message_to_slack(text):
+    """
+    Formats the text and posts to a specific Slack web app's URL
+    Returns:
+        Slack API repsonse
+    """
+    logger = logging.getLogger()
+    try:
+        post = {
+            "text": ":fire: :sad_parrot: An error has occured in the *NATS* pod :sad_parrot: :fire:",
+            "attachments": [
+                {
+                    "text": "{0}".format(text),
+                    "color": "#B22222",
+                    "attachment_type": "default",
+                    "fields": [
+                        {
+                            "title": "Priority",
+                            "value": "High",
+                            "short": "false"
+                        }
+                    ],
+                    "footer": "Kubernetes API",
+                    "footer_icon": "https://platform.slack-edge.com/img/default_application_icon.png"
+                }
+            ]
+            }
+        json_data = json.dumps(post)
+        req = urllib.request.Request(url=SLACK_WEBHOOK,
+                                     data=json_data.encode('utf-8'),
+                                     headers={'Content-Type': 'application/json'})
+        resp = urllib.request.urlopen(req)
+        return resp
+
+    except Exception as err:
+        logger.error(
+            'The following error has occurred on line: %s',
+            sys.exc_info()[2].tb_lineno)
+        logger.error(str(err))
+        sys.exit(1)
 
 def main():
     """
     Main function
     """
+# Setup logging and global variables
     logformat = '%(asctime)s\t%(name)s\t%(levelname)s\t%(message)s'
     form = logging.Formatter(logformat)
     logging.basicConfig(
@@ -100,22 +151,24 @@ def main():
     downloadcount = 0
     downloadtostagecount = 0
     uploadcount = 0
+
+# Connect and GET files from SFTP
     logger.info("Connecting via SSH")
     ssh = ssh_login(SSH_REMOTE_HOST, SSH_REMOTE_USER, SSH_PRIVATE_KEY)
-    logger.info("Connected")
     sftp = ssh.open_sftp()
+    logger.info("Connected")
 
     try:
         sftp.chdir(SSH_LANDING_DIR)
         # sort by modified date and get only limited batch
         files = sorted(sftp.listdir(), key=lambda x: sftp.stat(x).st_mtime)
         for file_json in files:
-            match = re.search('^\[-PRMD=EG-ADMD=ICAO-C=XX-;MTA-EGGG-1-MTCU_[A-Z0-9]{16}.*\].json$', file_json, re.I)
+            match = re.search('^\[-PRMD=EG-ADMD=ICAO-C=XX-;MTA-EGGG-1-MTCU_[A-Z0-9]{16}.*\].json$', file_json, re.IGNORECASE)
             download = True
             if match is not None:
                 file_json_staging = os.path.join(STAGING_DIR, file_json)
 
-                #protection against redownload
+# Protection against redownload
                 if os.path.isfile(file_json_staging) and os.path.getsize(file_json_staging) > 0 and os.path.getsize(file_json_staging) == sftp.stat(file_json).st_size:
                     download = False
                     logger.info("Purge %s", file_json)
@@ -132,12 +185,15 @@ def main():
                         break
         sftp.close()
         ssh.close()
-        # end for
-    except Exception:
-        logger.exception("Failure")
-# end with
 
-# batch virus scan on STAGING_DIR for NATS
+    except Exceptionm as err:
+        logger.error("Failure getting files from SFTP")
+        logger.exception(str(err))
+        error = str(err)
+        send_message_to_slack(error)
+        sys.exit(1)
+
+# Run virus scan
     if run_virus_scan(STAGING_DIR):
         for obj in os.listdir(STAGING_DIR):
             try:
@@ -146,9 +202,12 @@ def main():
                 logger.info("Move %s from staging to download %s", file_staging, file_download)
                 os.rename(file_staging, file_download)
                 downloadcount += 1
-            except Exception:
-                logger.exception("Could not run virus scan on %s", obj)
-                break
+            except Exception as err:
+                logger.error("Could not run virus scan on %s", obj)
+                logger.exception(str(err))
+                error = str(err)
+                send_message_to_slack(error)
+                sys.exit(1)
     logger.info("Processed %s files", downloadcount)
 
 # Move files to S3
@@ -170,26 +229,38 @@ def main():
             ga_s3_conn = boto_ga_s3_session.client("s3")
             full_filepath = os.path.join(DOWNLOAD_DIR, filename)
             if os.path.isfile(full_filepath):
-                logger.info("Copying %s to DQ S3", filename)
-                time = datetime.datetime.now()
-                dq_bucket_key_timestamp = time.strftime("%Y/%m/%d")
-                s3_conn.upload_file(full_filepath,
-                                    BUCKET_NAME,
-                                    BUCKET_KEY_PREFIX + "/" + dq_bucket_key_timestamp + "/" + filename)
-                logger.info("Copying %s to GA S3", filename)
-                ga_s3_conn.upload_file(full_filepath,
-                                       GA_BUCKET_NAME,
-                                       GA_BUCKET_KEY_PREFIX + "/" + filename,
-                                       ExtraArgs={"ServerSideEncryption": "aws:kms"})
-                os.remove(full_filepath)
-                logger.info("Deleting local file: %s", filename)
-                uploadcount += 1
-            else:
-                logger.error("Failed to upload %s", filename)
+                try:
+                    logger.info("Copying %s to DQ S3", filename)
+                    time = datetime.datetime.now()
+                    dq_bucket_key_timestamp = time.strftime("%Y/%m/%d")
+                    s3_conn.upload_file(full_filepath,
+                                        BUCKET_NAME,
+                                        BUCKET_KEY_PREFIX + "/" + dq_bucket_key_timestamp + "/" + filename)
+                except Exception as err:
+                    logger.error(
+                        "Failed to upload %s, exiting...", filename)
+                    logger.exception(str(err))
+                    error = str(err)
+                    send_message_to_slack(error)
+                    sys.exit(1)
+                try:
+                    logger.info("Copying %s to GA S3", filename)
+                    ga_s3_conn.upload_file(full_filepath,
+                                           GA_BUCKET_NAME,
+                                           GA_BUCKET_KEY_PREFIX + "/" + filename,
+                                           ExtraArgs={"ServerSideEncryption": "aws:kms"})
+                    os.remove(full_filepath)
+                    logger.info("Deleting local file: %s", filename)
+                    uploadcount += 1
+                except Exception as err:
+                    logger.error(
+                        "Failed to upload %s, exiting...", filename)
+                    logger.exception(str(err))
+                    error = str(err)
+                    send_message_to_slack(error)
+                    sys.exit(1)
 
     logger.info("Uploaded %s files", uploadcount)
-
-# end def main
 
 if __name__ == '__main__':
     main()

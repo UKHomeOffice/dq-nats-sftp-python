@@ -99,6 +99,11 @@ spec:
               secretKeyRef:
                 name: dq-nats-data-ingest
                 key: GA_S3_SECRET_ACCESS_KEY
+          - name: SLACK_WEBHOOK
+            valueFrom:
+              secretKeyRef:
+                name: dq-nats-data-ingest
+                key: SLACK_WEBHOOK
           - name: CLAMAV_URL
             value: "127.0.0.1"
           - name: CLAMAV_PORT
