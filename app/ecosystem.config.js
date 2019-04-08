@@ -26,7 +26,8 @@ module.exports = {
         GA_S3_ACCESS_KEY_ID: process.argv[15],
         GA_S3_SECRET_ACCESS_KEY: process.argv[16],
         CLAMAV_URL : process.argv[17],
-        CLAMAV_PORT : process.argv[18]
+        CLAMAV_PORT : process.argv[18],
+        SLACK_WEBHOOK : process.argv[19]
       }
     }
   ]
