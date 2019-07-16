@@ -209,6 +209,9 @@ def main():
                 send_message_to_slack(error)
                 sys.exit(1)
     logger.info("Processed %s files", downloadcount)
+    if downloadcount == 0:
+        logger.warning("Pulling zero files!")
+        send_message_to_slack("Something is not right: Pulling zero files! Check SFTP Admin page and contact vendor!")
 
 # Move files to S3
     logger.info("Starting to move files to S3")
