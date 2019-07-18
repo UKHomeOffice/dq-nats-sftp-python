@@ -174,6 +174,16 @@ def main():
                     logger.info("Purge %s", file_json)
                     sftp.remove(file_json)
                 if download:
+                    # Parse json file
+                    try:
+                        with open(file_json_staging, r) as q:
+                            q.read()
+                    except Exception as err:
+                        logger.info("Failed to parse file %s", file_json_staging)
+                        error = str(err)
+                        err_message = "Could not parse" + " " + file_json_staging + " " + error
+                        send_message_to_slack(err_message)
+                        break
                     logger.info("Downloading %s to %s", file_json, file_json_staging)
                     sftp.get(file_json, file_json_staging)  # remote, local
                     downloadtostagecount += 1
