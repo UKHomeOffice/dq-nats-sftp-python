@@ -73,6 +73,7 @@ def run_virus_scan(directory):
             if not 'Everything ok : true' in response.text:
                 logger.warning('Virus scan FAIL: %s is dangerous!', scan_file)
                 warning = ("Virus scan FAIL: " + scan_file + " is dangerous!")
+                send_message_to_slack(str(warning))
                 file_quarantine = os.path.join(QUARANTINE_DIR, scan_file)
                 logger.warning('Move %s from staging to quarantine %s', processing, file_quarantine)
                 os.rename(processing, file_quarantine)
