@@ -7,6 +7,7 @@ cp -R /tmp/NATS/scripts /NATS
 cp -R /tmp/NATS/quarantine /NATS
 cp -R /tmp/NATS/log /NATS
 cp -R /tmp/NATS/bin /NATS
+cp -R /tmp/NATS/failed_to_parse /NATS
 
 # Set permissions
 chown -R runner:runner /NATS/data
@@ -15,5 +16,6 @@ chown -R runner:runner /NATS/scripts
 chown -R runner:runner /NATS/quarantine
 chown -R runner:runner /NATS/log
 chown -R runner:runner /NATS/bin
+chown -R runner:runner /NATS/failed_to_parse
 
 exec "$@"

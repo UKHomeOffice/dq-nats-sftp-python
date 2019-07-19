@@ -36,6 +36,7 @@ DOWNLOAD_DIR            = '/NATS/data/nats'
 STAGING_DIR             = '/NATS/stage/nats'
 SCRIPTS_DIR             = '/NATS/scripts'
 QUARANTINE_DIR          = '/NATS/quarantine/nats'
+FAILED_PARSE_DIR        = '/NATS/failed_to_parse/nats'
 LOG_FILE                = '/NATS/log/sftp_nats.log'
 
 
@@ -72,7 +73,6 @@ def run_virus_scan(directory):
             if not 'Everything ok : true' in response.text:
                 logger.warning('Virus scan FAIL: %s is dangerous!', scan_file)
                 warning = ("Virus scan FAIL: " + scan_file + " is dangerous!")
-                send_message_to_slack(str(warning))
                 file_quarantine = os.path.join(QUARANTINE_DIR, scan_file)
                 logger.warning('Move %s from staging to quarantine %s', processing, file_quarantine)
                 os.rename(processing, file_quarantine)
@@ -174,16 +174,6 @@ def main():
                     logger.info("Purge %s", file_json)
                     sftp.remove(file_json)
                 if download:
-                    # Parse json file
-                    try:
-                        with open(file_json_staging, r) as q:
-                            q.read()
-                    except Exception as err:
-                        logger.info("Failed to parse file %s", file_json_staging)
-                        error = str(err)
-                        err_message = "Could not parse" + " " + file_json_staging + " " + error
-                        send_message_to_slack(err_message)
-                        break
                     logger.info("Downloading %s to %s", file_json, file_json_staging)
                     sftp.get(file_json, file_json_staging)  # remote, local
                     downloadtostagecount += 1
@@ -196,7 +186,7 @@ def main():
         sftp.close()
         ssh.close()
 
-    except Exceptionm as err:
+    except Exception as err:
         logger.error("Failure getting files from SFTP")
         logger.exception(str(err))
         error = str(err)
@@ -206,9 +196,22 @@ def main():
 # Run virus scan
     if run_virus_scan(STAGING_DIR):
         for obj in os.listdir(STAGING_DIR):
+            file_download = os.path.join(DOWNLOAD_DIR, obj)
+            file_staging = os.path.join(STAGING_DIR, obj)
+            # Parse json file
             try:
-                file_download = os.path.join(DOWNLOAD_DIR, obj)
-                file_staging = os.path.join(STAGING_DIR, obj)
+                with open(file_staging, "r") as q:
+                    q.read()
+                logger.info("File parsed OK: %s", obj)
+            except Exception as err:
+                logger.info("Failed to parse file %s. Moving to quarantine directory", file_json)
+                file_parsed_failed = os.path.join(FAILED_PARSE_DIR, obj)
+                os.rename(file_staging, file_parsed_failed)
+                sftp.remove(obj)
+                error = str(err)
+                err_message = "Failed to parse" + " " + obj + " " + error
+                send_message_to_slack(err_message)
+            try:
                 logger.info("Move %s from staging to download %s", file_staging, file_download)
                 os.rename(file_staging, file_download)
                 downloadcount += 1

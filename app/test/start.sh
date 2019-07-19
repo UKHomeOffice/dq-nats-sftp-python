@@ -9,6 +9,8 @@ set -e
 
 # Set variables
 
+# Set variables
+
 # SFTP connectivity
 echo "********************************************"
 echo "Setup sftp-server container variables:"
@@ -98,9 +100,9 @@ function nats {
         -e GA_S3_KEY_PREFIX=$gakeyprefix \
         -e GA_S3_ACCESS_KEY_ID=$gaawskeyid \
         -e GA_S3_SECRET_ACCESS_KEY=$gaawssecret \
-        -e SLACK_WEBHOOK=$webhook \
         -e CLAMAV_URL='clamav-api' \
         -e CLAMAV_PORT='8080' \
+        -e SLACK_WEBHOOK=$webhook \
         -v $privkey:/home/runner/.ssh/id_rsa:ro \
         --link clamav-api:clamav-api \
         --link sftp-server:sftp-server \
@@ -110,6 +112,12 @@ function nats {
 }
 
 function create_ok_file {
+  rand=$(openssl rand -hex 30 | tr "[:lower:]" "[:upper:]" | cut -c -16)
+  run=$(echo '{\n  "Test": "data",\n  "in": "file"\n}' > "$mountpoint/[-PRMD=EG-ADMD=ICAO-C=XX-;MTA-EGGG-1-MTCU_$rand].json")
+  echo "Created OK test file: [-PRMD=EG-ADMD=ICAO-C=XX-;MTA-EGGG-1-MTCU_$rand].json"
+}
+
+function create_invalid_json {
   rand=$(openssl rand -hex 30 | tr "[:lower:]" "[:upper:]" | cut -c -16)
   run=$(echo "{\n  'Test': 'data',\n  'in': 'file'\n}" > "$mountpoint/[-PRMD=EG-ADMD=ICAO-C=XX-;MTA-EGGG-1-MTCU_$rand].json")
   echo "Created OK test file: [-PRMD=EG-ADMD=ICAO-C=XX-;MTA-EGGG-1-MTCU_$rand].json"
@@ -143,6 +151,10 @@ function main {
   echo "********************************************"
   echo "Creating OK test file"
   create_ok_file
+  echo "Done."
+  echo "********************************************"
+  echo "Creating invalid JSON test file"
+  create_invalid_json
   echo "Done."
   echo "********************************************"
   echo "Creating Virus test file"
