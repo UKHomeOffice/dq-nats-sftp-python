@@ -36,6 +36,7 @@ DOWNLOAD_DIR            = '/NATS/data/nats'
 STAGING_DIR             = '/NATS/stage/nats'
 SCRIPTS_DIR             = '/NATS/scripts'
 QUARANTINE_DIR          = '/NATS/quarantine/nats'
+FAILED_PARSE_DIR        = '/NATS/failed_to_parse/nats'
 LOG_FILE                = '/NATS/log/sftp_nats.log'
 
 
@@ -186,7 +187,7 @@ def main():
         sftp.close()
         ssh.close()
 
-    except Exceptionm as err:
+    except Exception as err:
         logger.error("Failure getting files from SFTP")
         logger.exception(str(err))
         error = str(err)
@@ -196,9 +197,22 @@ def main():
 # Run virus scan
     if run_virus_scan(STAGING_DIR):
         for obj in os.listdir(STAGING_DIR):
+            file_download = os.path.join(DOWNLOAD_DIR, obj)
+            file_staging = os.path.join(STAGING_DIR, obj)
+            # Parse json file
             try:
-                file_download = os.path.join(DOWNLOAD_DIR, obj)
-                file_staging = os.path.join(STAGING_DIR, obj)
+                with open(file_staging, "r") as q:
+                    q.read()
+                logger.info("File parsed OK: %s", obj)
+            except Exception as err:
+                logger.info("Failed to parse file %s. Moving to quarantine directory", file_json)
+                file_parsed_failed = os.path.join(FAILED_PARSE_DIR, obj)
+                os.rename(file_staging, file_parsed_failed)
+                sftp.remove(obj)
+                error = str(err)
+                err_message = "Failed to parse" + " " + obj + " " + error
+                send_message_to_slack(err_message)
+            try:
                 logger.info("Move %s from staging to download %s", file_staging, file_download)
                 os.rename(file_staging, file_download)
                 downloadcount += 1
@@ -209,6 +223,9 @@ def main():
                 send_message_to_slack(error)
                 sys.exit(1)
     logger.info("Processed %s files", downloadcount)
+    if downloadcount == 0:
+        logger.warning("Pulling zero files!")
+        send_message_to_slack("Something is not right: Pulling zero files! Check SFTP Admin page and contact vendor!")
 
 # Move files to S3
     logger.info("Starting to move files to S3")

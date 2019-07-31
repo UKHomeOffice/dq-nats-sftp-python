@@ -9,6 +9,7 @@ RUN mkdir -p \
              /tmp/NATS/data/nats \
              /tmp/NATS/stage/nats \
              /tmp/NATS/quarantine/nats \
+             /tmp/NATS/failed_to_parse/nats \
              /tmp/NATS/log \
              /tmp/NATS/bin \
              /NATS \
