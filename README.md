@@ -119,3 +119,16 @@ NOTE: **all** running containers will be stopped
 ```
 sh stop.sh
 ```
+
+If files have not uploaded into s3, check the error logs by exec'ing into the nats python container and checking error.log file. The path of this file is shown by entering the command:
+
+```
+pm2 show 0
+```
+
+If the logs read that the private key found is not a valid format, then cat your id_rsa file to check if the the format is OPENSSH. If you generated your keys specifying RSA type and you still have OPENSSH, then use this command to generate the keys again:
+
+```
+ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM -f /Path-to-file/id_rsa
+```
+Some versions of macs auto-format ssh-keys to OPENSSH even when RSA is specified and need to be converted using this command. 
