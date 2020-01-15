@@ -10,7 +10,7 @@ module.exports = {
       script    : "/NATS/bin/DQ_NATS_file_ingest",
       interpreter: "python",
       env: {
-        PROCESS_INTERVAL: 60,
+        PROCESS_INTERVAL: 120,
         MAX_BATCH_SIZE: 5000,
         SSH_REMOTE_HOST : process.argv[5],
         SSH_REMOTE_USER : process.argv[6],
