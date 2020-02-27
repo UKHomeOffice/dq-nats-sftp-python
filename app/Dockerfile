@@ -43,6 +43,8 @@ RUN curl -sL https://raw.githubusercontent.com/nodesource/distributions/master/r
     yum install -y nodejs && \
     npm install -g pm2
 
+RUN yum update -y python2
+
 VOLUME ["/NATS"]
 RUN chown -R runner:runner /NATS
 
