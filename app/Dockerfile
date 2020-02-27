@@ -39,7 +39,7 @@ RUN yum install -y wget make gcc openssl-devel zlib-devel pcre-devel bzip2-devel
 RUN pip3 install --no-cache-dir -r /tmp/NATS/scripts/packages.txt
 
 # Install PM2
-RUN curl -sL https://raw.githubusercontent.com/nodesource/distributions/master/rpm/setup_13.8 -o setup_13.8 && bash setup_13.8 && rm setup_13.8 && \
+RUN curl -sL https://raw.githubusercontent.com/nodesource/distributions/master/rpm/setup_13.8* -o setup_13.8* && bash setup_13.8* && rm setup_13.8* && \
     yum install -y nodejs && \
     npm install -g pm2
 
