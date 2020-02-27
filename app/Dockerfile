@@ -1,4 +1,4 @@
-FROM quay.io/ukhomeofficedigital/centos-base:v0.5.14.1
+FROM centos:8
 
 ENV USERMAP_UID 1000
 ENV PYTHONPATH="$PYTHONPATH:/NATS"
@@ -33,21 +33,10 @@ RUN groupadd -r runner && \
 
 # Install script dependencies
 RUN yum update -y
-RUN yum install -y wget make gcc openssl-devel zlib-devel pcre-devel bzip2-devel libffi-devel epel-release
+RUN yum install -y wget make gcc openssl-devel zlib-devel pcre-devel bzip2-devel libffi-devel epel-release python3
 
-# Install Python3.7.2 and pip modules
-RUN cd /usr/bin && \
-    wget https://www.python.org/ftp/python/3.7.2/Python-3.7.2.tgz && \
-    tar xzf Python-3.7.2.tgz && \
-    cd Python-3.7.2 && \
-    ./configure --enable-optimizations && \
-    make altinstall && \
-    alternatives --install /usr/bin/python python /usr/local/bin/python3.7 1
-RUN python -m pip install --no-cache-dir -r /tmp/NATS/scripts/packages.txt
-
-# Fix yum installer with Python3.7 running as a global default
-RUN sed -i '/#!\/usr\/bin\/python/c\#!\/usr\/bin\/python2.7' /usr/bin/yum && \
-    sed -i '/#! \/usr\/bin\/python/c\#! \/usr\/bin\/python2.7' /usr/libexec/urlgrabber-ext-down
+# Install modules with pip
+RUN pip3 install --no-cache-dir -r /tmp/NATS/scripts/packages.txt
 
 # Install PM2
 RUN curl -sL https://raw.githubusercontent.com/nodesource/distributions/master/rpm/setup_11.x -o setup_11.x && bash setup_11.x && rm setup_11.x && \
