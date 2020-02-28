@@ -8,7 +8,7 @@ module.exports = {
     {
       name      : "DQ-NATS-file-ingest",
       script    : "/NATS/bin/DQ_NATS_file_ingest",
-      interpreter: "python",
+      interpreter: "python3",
       env: {
         PROCESS_INTERVAL: 120,
         MAX_BATCH_SIZE: 5000,
