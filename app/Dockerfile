@@ -39,8 +39,7 @@ RUN yum install -y wget make gcc openssl-devel zlib-devel pcre-devel bzip2-devel
 RUN pip3 install --no-cache-dir -r /tmp/NATS/scripts/packages.txt
 
 # Install PM2
-RUN curl -sL https://raw.githubusercontent.com/nodesource/distributions/master/rpm/setup_10.x -o setup_10.x && bash setup_10.x && rm setup_10.x && \
-    yum install -y nodejs && \
+RUN yum install -y nodejs && \
     npm install -g pm2
 
 VOLUME ["/NATS"]
