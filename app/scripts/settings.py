@@ -4,7 +4,7 @@ environment variables"""
 import os
 
 """DQ NATS file ingest"""
-PROCESS_INTERVAL        = int(os.environ.get('PROCESS_INTERVAL', 120))
+PROCESS_INTERVAL        = int(os.environ.get('PROCESS_INTERVAL', 240))
 MAX_BATCH_SIZE          = int(os.environ.get('MAX_BATCH_SIZE', 25))
 SSH_REMOTE_HOST         = os.environ.get('SSH_REMOTE_HOST')
 SSH_REMOTE_USER         = os.environ.get('SSH_REMOTE_USER')
