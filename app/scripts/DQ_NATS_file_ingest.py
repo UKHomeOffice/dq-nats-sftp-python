@@ -38,6 +38,7 @@ SCRIPTS_DIR             = '/NATS/scripts'
 QUARANTINE_DIR          = '/NATS/quarantine/nats'
 FAILED_PARSE_DIR        = '/NATS/failed_to_parse/nats'
 LOG_FILE                = '/NATS/log/sftp_nats.log'
+NO_OF_RETRIES           = int(os.getenv('NO_OF_RETRIES',4))
 
 
 def ssh_login(in_host, in_user, in_keyfile):
@@ -69,10 +70,14 @@ def run_virus_scan(directory):
     for scan_file in file_list:
         processing = os.path.join(STAGING_DIR, scan_file)
         with open(processing, 'rb') as scan:
-            response = requests.post('http://' + BASE_URL + ':' + BASE_PORT + '/scan', files={'file': scan}, data={'name': scan_file})
+            for i in range(1, NO_OF_RETRIES):
+                logger.info(f"scanning_file:{scan_file} - scan_count:{i}")
+                response = requests.post('http://' + BASE_URL + ':' + BASE_PORT + '/scan', files={'file': scan}, data={'name': scan_file})
+                if 'Everything ok : true' in response.text:
+                    break
             if not 'Everything ok : true' in response.text:
-                logger.warning('Virus scan FAIL: %s is dangerous!', scan_file)
-                warning = ("Virus scan FAIL: " + scan_file + " is dangerous!")
+                logger.warning('Virus scan FAIL: %s could be dangerous! Triage quarantine directory!', scan_file)
+                warning = ("Virus scan FAIL: " + scan_file + " could be dangerous! Triage quarantine directory!")
                 send_message_to_slack(str(warning))
                 file_quarantine = os.path.join(QUARANTINE_DIR, scan_file)
                 logger.warning('Move %s from staging to quarantine %s', processing, file_quarantine)
