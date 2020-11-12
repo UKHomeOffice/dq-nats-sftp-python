@@ -46,6 +46,7 @@ pipeline:
       - export GA_S3_ACCESS_KEY_ID=$$NOTPROD_GA_S3_ACCESS_KEY_ID
       - export GA_S3_SECRET_ACCESS_KEY=$$NOTPROD_GA_S3_SECRET_ACCESS_KEY
       - export SLACK_WEBHOOK=$$NOTPROD_SLACK_WEBHOOK
+      - kd --delete --file deployment.yml
       - kd -f kube/pvc.yml -f kube/secret.yml -f kube/deployment.yml
     secrets:
       - NOTPROD_KUBE_TOKEN
@@ -98,6 +99,7 @@ pipeline:
       - export GA_S3_ACCESS_KEY_ID=$$PROD_GA_S3_ACCESS_KEY_ID
       - export GA_S3_SECRET_ACCESS_KEY=$$PROD_GA_S3_SECRET_ACCESS_KEY
       - export SLACK_WEBHOOK=$$PROD_SLACK_WEBHOOK
+      - kd --delete --file deployment.yml
       - kd -f kube/pvc.yml -f kube/secret.yml -f kube/deployment.yml
     secrets:
       - PROD_KUBE_TOKEN
