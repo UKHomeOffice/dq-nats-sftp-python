@@ -150,7 +150,7 @@ spec:
           failureThreshold: 10
 
       - name: clamav
-        image: quay.io/ukhomeofficedigital/clamav
+        image: quay.io/ukhomeofficedigital/dq-clamav:31c36cbb32934dec76a57b8b4a4179cd9d88f0f4
         imagePullPolicy: Always
         securityContext:
           runAsNonRoot: true
