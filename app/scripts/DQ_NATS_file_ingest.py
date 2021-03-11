@@ -65,6 +65,7 @@ def run_virus_scan(directory):
     """
     Send a file to scanner API
     """
+    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
     logger = logging.getLogger()
     logger.info("Virus Scanning %s folder", directory)
     file_list = os.listdir(directory)
