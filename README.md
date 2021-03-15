@@ -2,8 +2,7 @@
 
 [![Docker Repository on Quay](https://quay.io/repository/ukhomeofficedigital/dq-nats-sftp-python/status "Docker Repository on Quay")](https://quay.io/repository/ukhomeofficedigital/dq-nats-sftp-python)
 
-A collection of Docker containers running a data pipeline.
-Tasks include:
+A Docker container that runs the following Tasks:
 - SFTP LIST files
 - SFTP GET from a remote SFTP server
 - Running virus check on each file pulled from SFTP by sending them to ClamAV API
@@ -50,16 +49,13 @@ The POD consists of 3 (three) Docker containers responsible for handling data.
 | Container Name | Function | Language | Exposed port | Managed by |
 | :--- | :---: | :---: | ---: | --- |
 | dq-nats-data-ingest | Data pipeline app| Python3.7 | N/A | DQ Devops |
-| clamav-api | API for virus checks | N/A | 8080 |ACP |
-| clamav | Database for virus checks | N/A | 3310 |ACP |
 
 
 ## Data flow
 
 - *dq-nats-data-ingest* GET files from an external SFTP server
 - *dq-nats-data-ingest* DELETE files from SFTP
-- sending these files to *clamav-api* with destination *localhost:8080*
-- files are being sent from *clamav-api* to *clamav* with destination *localhost:3310*
+- sending these files to *dq-clamav* scanner with destination *dq-clamav:443*
 - *OK* or *!OK* response text is sent back to *dq-nats-data-ingest*
   - *IF OK* file is uploaded to S3 and deleted from local storage
   - *IF !OK* file is moved to quarantine on the PVC
@@ -89,8 +85,6 @@ The script will require the following variables passed in at runtime.
 
 - Components:
   - SFTP container
-  - ClamAV container
-  - ClamAV REST API container
   - NATS Python container
 
 After the script has completed - for the first time it will take around 5 minutes to download all images - there should be a test files in the S3 bucket:
@@ -131,4 +125,24 @@ If the logs read that the private key found is not a valid format, then cat your
 ```
 ssh-keygen -t rsa -b 4096 -C "email@email.com" -m PEM -f /Path-to-file/id_rsa
 ```
-Some versions of macs auto-format ssh-keys to OPENSSH even when RSA is specified and need to be converted using this command. 
+Some versions of macs auto-format ssh-keys to OPENSSH even when RSA is specified and need to be converted using this command.
+
+## Test using Mock FTP EC2
+
+ in order to test ingesting files in Notprod environemt prior to Prod Deployment. Below are the steps requried:
+
+ - deploy the modified version of *dq-nats-data-ingest* pod to NOTPROD_DATABASE_URL
+
+ - logon to the mock FTP server  via ssh as follows (the EC2 instance *mock-ftp-server-centos* in DQ notprod AWS can sometimes be stopped - so ensure it is running):
+
+ ```
+ ssh -i ~/.ssh/test_instance_nonprod.cer centos@35.177.100.82
+ ```
+
+ - Once logged on change to the *mock_ftp_user* user and change to the *nats-land* directory. Once in the *nats-land* dir, create a test file. use one of the exiting files as an example.
+
+ - Once the test file is created, monitor the logs of the *dq-nats-data-ingest* pod to check if the test file is ingested, virus scanned, parsed and then pushed to S3 successfully by running the following command:
+
+ ```     
+ kubectl --context=acp-notprod_DQ --namespace=dq-apps-notprod logs -f dq-nats-data-ingest-<####>  -c dq-nats-data-ingest
+ ```
