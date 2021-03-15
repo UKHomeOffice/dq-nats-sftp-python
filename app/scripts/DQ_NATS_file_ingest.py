@@ -14,7 +14,7 @@ import urllib.request
 import paramiko
 import boto3
 import requests
-# from requests.packages.urllib3.exceptions import InsecureRequestWarning
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 MAX_BATCH_SIZE          = int(os.environ['MAX_BATCH_SIZE'])
 SSH_REMOTE_HOST         = os.environ['SSH_REMOTE_HOST']
