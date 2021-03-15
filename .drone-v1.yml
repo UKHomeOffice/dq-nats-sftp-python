@@ -52,10 +52,6 @@ steps:
   - kd --delete --file kube/deployment.yml
   - kd -f kube/pvc.yml -f kube/secret.yml -f kube/deployment.yml
   environment:
-    CLAMAV_CPU_LIMIT: 1
-    CLAMAV_CPU_REQUEST: 1
-    CLAMAV_RAM_LIMIT: 1Gi
-    CLAMAV_RAM_REQUEST: 1Gi
     INSECURE_SKIP_TLS_VERIFY: true
     KUBE_NAMESPACE: dq-apps-notprod
     NATS_CPU_LIMIT: 1.5
@@ -122,10 +118,6 @@ steps:
   - kd --delete --file kube/deployment.yml
   - kd -f kube/pvc.yml -f kube/secret.yml -f kube/deployment.yml
   environment:
-    CLAMAV_CPU_LIMIT: 2.5
-    CLAMAV_CPU_REQUEST: 2
-    CLAMAV_RAM_LIMIT: 4Gi
-    CLAMAV_RAM_REQUEST: 3Gi
     INSECURE_SKIP_TLS_VERIFY: true
     KUBE_NAMESPACE: dq-apps
     NATS_CPU_LIMIT: 2.5

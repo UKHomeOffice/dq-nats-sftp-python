@@ -14,6 +14,7 @@ import urllib.request
 import paramiko
 import boto3
 import requests
+from requests.packages.urllib3.exceptions import InsecureRequestWarning
 
 MAX_BATCH_SIZE          = int(os.environ['MAX_BATCH_SIZE'])
 SSH_REMOTE_HOST         = os.environ['SSH_REMOTE_HOST']
@@ -64,6 +65,7 @@ def run_virus_scan(directory):
     """
     Send a file to scanner API
     """
+    requests.packages.urllib3.disable_warnings(InsecureRequestWarning)
     logger = logging.getLogger()
     logger.info("Virus Scanning %s folder", directory)
     file_list = os.listdir(directory)
@@ -72,7 +74,7 @@ def run_virus_scan(directory):
         with open(processing, 'rb') as scan:
             for i in range(1, NO_OF_RETRIES):
                 logger.info(f"scanning_file:{scan_file} - scan_count:{i}")
-                response = requests.post('http://' + BASE_URL + ':' + BASE_PORT + '/scan', files={'file': scan}, data={'name': scan_file})
+                response = requests.post('https://' + BASE_URL + ':' + BASE_PORT + '/scan', files={'file': scan}, data={'name': scan_file}, verify=False)
                 if 'Everything ok : true' in response.text:
                     break
             if not 'Everything ok : true' in response.text:
