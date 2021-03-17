@@ -108,69 +108,12 @@ spec:
                 name: dq-nats-data-ingest
                 key: SLACK_WEBHOOK
           - name: CLAMAV_URL
-            value: "127.0.0.1"
+            value: "dq-clamav"
           - name: CLAMAV_PORT
-            value: "8080"
+            value: "443"
         volumeMounts:
         - name: sftp-key
           mountPath: /key
           readOnly: true
         - name: nats-volume
           mountPath: /NATS
-
-      - name: clamav-api
-        image: quay.io/ukhomeofficedigital/clamav-rest
-        imagePullPolicy: Always
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 1000
-        resources:
-          limits:
-            cpu: {{.CLAMAV_CPU_LIMIT}}
-            memory: {{.CLAMAV_RAM_LIMIT}}
-          requests:
-            cpu: {{.CLAMAV_CPU_REQUEST}}
-            memory: {{.CLAMAV_RAM_REQUEST}}
-        env:
-        - name: HOST
-          value: localhost
-        - name: PORT
-          value: '3310'
-        ports:
-        - containerPort: 8080
-          name: api
-          protocol: TCP
-        livenessProbe:
-          exec:
-            command:
-            - /var/clamav-rest/healthcheck.sh
-          initialDelaySeconds: 60
-          timeoutSeconds: 10
-          periodSeconds: 30
-          failureThreshold: 10
-
-      - name: clamav
-        image: quay.io/ukhomeofficedigital/clamav:latest
-        imagePullPolicy: Always
-        securityContext:
-          runAsNonRoot: true
-          runAsUser: 1000
-        resources:
-          limits:
-            cpu: {{.CLAMAV_CPU_LIMIT}}
-            memory: {{.CLAMAV_RAM_LIMIT}}
-          requests:
-            cpu: {{.CLAMAV_CPU_REQUEST}}
-            memory: {{.CLAMAV_RAM_REQUEST}}
-        ports:
-        - containerPort: 3310
-          name: api
-          protocol: TCP
-        livenessProbe:
-          exec:
-            command:
-            - /readyness.sh
-          initialDelaySeconds: 90
-          timeoutSeconds: 20
-          periodSeconds: 30
-          failureThreshold: 20

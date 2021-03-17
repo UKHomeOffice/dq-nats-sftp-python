@@ -1,0 +1,170 @@
+---
+kind: pipeline
+name: default
+type: kubernetes
+
+platform:
+  os: linux
+  arch: amd64
+
+steps:
+- name: build
+  pull: if-not-exists
+  image: plugins/docker
+  settings:
+    context: app
+    dockerfile: app/Dockerfile
+    force_tag: true
+    registry: quay.io
+    repo: quay.io/ukhomeofficedigital/dq-nats-sftp-python
+    tags:
+    - ${DRONE_COMMIT_SHA}
+    - ${DRONE_BUILD_NUMBER}
+  environment:
+    DOCKER_PASSWORD:
+      from_secret: docker_password
+    DOCKER_USERNAME:
+      from_secret: docker_username
+  when:
+    event:
+    - push
+
+- name: deploy_to_dev
+  pull: if-not-exists
+  image: quay.io/ukhomeofficedigital/kd
+  commands:
+  - export KUBE_TOKEN=$$NOTPROD_KUBE_TOKEN
+  - export KUBE_SERVER=$$NOTPROD_KUBE_SERVER
+  - export SSH_REMOTE_HOST=$$NOTPROD_SSH_REMOTE_HOST
+  - export SSH_REMOTE_USER=$$NOTPROD_SSH_REMOTE_USER
+  - export SSH_PRIVATE_KEY=$$NOTPROD_SSH_PRIVATE_KEY
+  - export SSH_PRIVATE_KEY_PATH=$$NOTPROD_SSH_PRIVATE_KEY_PATH
+  - export SSH_LANDING_DIR=$$NOTPROD_SSH_LANDING_DIR
+  - export S3_BUCKET_NAME=$$NOTPROD_S3_BUCKET_NAME
+  - export S3_KEY_PREFIX=$$NOTPROD_S3_KEY_PREFIX
+  - export S3_ACCESS_KEY_ID=$$NOTPROD_S3_ACCESS_KEY_ID
+  - export S3_SECRET_ACCESS_KEY=$$NOTPROD_S3_SECRET_ACCESS_KEY
+  - export GA_S3_BUCKET_NAME=$$NOTPROD_GA_S3_BUCKET_NAME
+  - export GA_S3_KEY_PREFIX=$$NOTPROD_GA_S3_KEY_PREFIX
+  - export GA_S3_ACCESS_KEY_ID=$$NOTPROD_GA_S3_ACCESS_KEY_ID
+  - export GA_S3_SECRET_ACCESS_KEY=$$NOTPROD_GA_S3_SECRET_ACCESS_KEY
+  - export SLACK_WEBHOOK=$$NOTPROD_SLACK_WEBHOOK
+  - kd --delete --file kube/deployment.yml
+  - kd -f kube/pvc.yml -f kube/secret.yml -f kube/deployment.yml
+  environment:
+    INSECURE_SKIP_TLS_VERIFY: true
+    KUBE_NAMESPACE: dq-apps-notprod
+    NATS_CPU_LIMIT: 1.5
+    NATS_CPU_REQUEST: 1
+    NATS_PVC_SIZE: 1Gi
+    NATS_RAM_LIMIT: 1.5Gi
+    NATS_RAM_REQUEST: 1Gi
+    NOTPROD_GA_S3_ACCESS_KEY_ID:
+      from_secret: NOTPROD_GA_S3_ACCESS_KEY_ID
+    NOTPROD_GA_S3_BUCKET_NAME:
+      from_secret: NOTPROD_GA_S3_BUCKET_NAME
+    NOTPROD_GA_S3_KEY_PREFIX:
+      from_secret: NOTPROD_GA_S3_KEY_PREFIX
+    NOTPROD_GA_S3_SECRET_ACCESS_KEY:
+      from_secret: NOTPROD_GA_S3_SECRET_ACCESS_KEY
+    NOTPROD_KUBE_SERVER:
+      from_secret: NOTPROD_KUBE_SERVER
+    NOTPROD_KUBE_TOKEN:
+      from_secret: NOTPROD_KUBE_TOKEN
+    NOTPROD_S3_ACCESS_KEY_ID:
+      from_secret: NOTPROD_S3_ACCESS_KEY_ID
+    NOTPROD_S3_BUCKET_NAME:
+      from_secret: NOTPROD_S3_BUCKET_NAME
+    NOTPROD_S3_KEY_PREFIX:
+      from_secret: NOTPROD_S3_KEY_PREFIX
+    NOTPROD_S3_SECRET_ACCESS_KEY:
+      from_secret: NOTPROD_S3_SECRET_ACCESS_KEY
+    NOTPROD_SLACK_WEBHOOK:
+      from_secret: NOTPROD_SLACK_WEBHOOK
+    NOTPROD_SSH_LANDING_DIR:
+      from_secret: NOTPROD_SSH_LANDING_DIR
+    NOTPROD_SSH_PRIVATE_KEY:
+      from_secret: NOTPROD_SSH_PRIVATE_KEY
+    NOTPROD_SSH_PRIVATE_KEY_PATH:
+      from_secret: NOTPROD_SSH_PRIVATE_KEY_PATH
+    NOTPROD_SSH_REMOTE_HOST:
+      from_secret: NOTPROD_SSH_REMOTE_HOST
+    NOTPROD_SSH_REMOTE_USER:
+      from_secret: NOTPROD_SSH_REMOTE_USER
+  when:
+    event:
+    - push
+
+- name: deploy_to_production
+  pull: if-not-exists
+  image: quay.io/ukhomeofficedigital/kd
+  commands:
+  - export KUBE_TOKEN=$$PROD_KUBE_TOKEN
+  - export KUBE_SERVER=$$PROD_KUBE_SERVER
+  - export SSH_REMOTE_HOST=$$PROD_SSH_REMOTE_HOST
+  - export SSH_REMOTE_USER=$$PROD_SSH_REMOTE_USER
+  - export SSH_PRIVATE_KEY=$$PROD_SSH_PRIVATE_KEY
+  - export SSH_PRIVATE_KEY_PATH=$$PROD_SSH_PRIVATE_KEY_PATH
+  - export SSH_LANDING_DIR=$$PROD_SSH_LANDING_DIR
+  - export S3_BUCKET_NAME=$$PROD_S3_BUCKET_NAME
+  - export S3_KEY_PREFIX=$$PROD_S3_KEY_PREFIX
+  - export S3_ACCESS_KEY_ID=$$PROD_S3_ACCESS_KEY_ID
+  - export S3_SECRET_ACCESS_KEY=$$PROD_S3_SECRET_ACCESS_KEY
+  - export GA_S3_BUCKET_NAME=$$PROD_GA_S3_BUCKET_NAME
+  - export GA_S3_KEY_PREFIX=$$PROD_GA_S3_KEY_PREFIX
+  - export GA_S3_ACCESS_KEY_ID=$$PROD_GA_S3_ACCESS_KEY_ID
+  - export GA_S3_SECRET_ACCESS_KEY=$$PROD_GA_S3_SECRET_ACCESS_KEY
+  - export SLACK_WEBHOOK=$$PROD_SLACK_WEBHOOK
+  - kd --delete --file kube/deployment.yml
+  - kd -f kube/pvc.yml -f kube/secret.yml -f kube/deployment.yml
+  environment:
+    INSECURE_SKIP_TLS_VERIFY: true
+    KUBE_NAMESPACE: dq-apps
+    NATS_CPU_LIMIT: 2.5
+    NATS_CPU_REQUEST: 2
+    NATS_PVC_SIZE: 5Gi
+    NATS_RAM_LIMIT: 4Gi
+    NATS_RAM_REQUEST: 3Gi
+    PROD_GA_S3_ACCESS_KEY_ID:
+      from_secret: PROD_GA_S3_ACCESS_KEY_ID
+    PROD_GA_S3_BUCKET_NAME:
+      from_secret: PROD_GA_S3_BUCKET_NAME
+    PROD_GA_S3_KEY_PREFIX:
+      from_secret: PROD_GA_S3_KEY_PREFIX
+    PROD_GA_S3_SECRET_ACCESS_KEY:
+      from_secret: PROD_GA_S3_SECRET_ACCESS_KEY
+    PROD_KUBE_SERVER:
+      from_secret: PROD_KUBE_SERVER
+    PROD_KUBE_TOKEN:
+      from_secret: PROD_KUBE_TOKEN
+    PROD_S3_ACCESS_KEY_ID:
+      from_secret: PROD_S3_ACCESS_KEY_ID
+    PROD_S3_BUCKET_NAME:
+      from_secret: PROD_S3_BUCKET_NAME
+    PROD_S3_KEY_PREFIX:
+      from_secret: PROD_S3_KEY_PREFIX
+    PROD_S3_SECRET_ACCESS_KEY:
+      from_secret: PROD_S3_SECRET_ACCESS_KEY
+    PROD_SLACK_WEBHOOK:
+      from_secret: PROD_SLACK_WEBHOOK
+    PROD_SSH_LANDING_DIR:
+      from_secret: PROD_SSH_LANDING_DIR
+    PROD_SSH_PRIVATE_KEY:
+      from_secret: PROD_SSH_PRIVATE_KEY
+    PROD_SSH_PRIVATE_KEY_PATH:
+      from_secret: PROD_SSH_PRIVATE_KEY_PATH
+    PROD_SSH_REMOTE_HOST:
+      from_secret: PROD_SSH_REMOTE_HOST
+    PROD_SSH_REMOTE_USER:
+      from_secret: PROD_SSH_REMOTE_USER
+  when:
+    branch:
+    - master
+    event:
+    - promote
+    target:
+    - production
+
+services:
+  - name: docker
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
