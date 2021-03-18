@@ -29,6 +29,18 @@ steps:
     event:
     - push
 
+- name: trivy_scan
+  pull: if-not-exists
+  image: aquasec/trivy
+  commands:
+  - trivy --exit-code 1 --no-progress quay.io/ukhomeofficedigital/dq-nats-sftp-python:${DRONE_COMMIT_SHA}
+  when:
+    branch:
+      exclude:
+      - master
+    event:
+    - push
+
 - name: deploy_to_dev
   pull: if-not-exists
   image: quay.io/ukhomeofficedigital/kd
@@ -168,3 +180,8 @@ steps:
 services:
   - name: docker
     image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
+  - name: anchore-submission-server
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/anchore-submission:latest
+    pull: always
+    commands:
+      - /run.sh server
