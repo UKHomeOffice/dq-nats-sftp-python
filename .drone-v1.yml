@@ -31,7 +31,7 @@ steps:
 
 - name: trivy_scan
   pull: if-not-exists
-  image: aquasec/trivy
+  image: quay.io/ukhomeofficedigital/trivyscanner:b82
   commands:
   - trivy --ignore-unfixed --exit-code 1 --no-progress quay.io/ukhomeofficedigital/dq-nats-sftp-python:${DRONE_COMMIT_SHA}
   when:
