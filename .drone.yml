@@ -70,6 +70,9 @@ steps:
       from_secret: VAULT_ADDR_NOTPROD
     VAULT_TOKEN:
       from_secret: VAULT_TOKEN_NOTPROD
+  when:
+    event:
+    - push
 
 - name: deploy_to_dev
   pull: if-not-exists
@@ -132,6 +135,13 @@ steps:
       from_secret: VAULT_ADDR_PROD
     VAULT_TOKEN:
       from_secret: VAULT_TOKEN_PROD
+  when:
+    branch:
+    - master
+    event:
+    - promote
+    target:
+    - production
 
 - name: deploy_to_production
   pull: if-not-exists
