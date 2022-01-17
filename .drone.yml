@@ -138,25 +138,6 @@ steps:
   image: *kd-image
   commands:
     *deploy-to-k8s
-  # - source acp_keys.sh
-  # - export KUBE_TOKEN=$$PROD_KUBE_TOKEN
-  # - export KUBE_SERVER=$$PROD_KUBE_SERVER
-  # - export SSH_REMOTE_HOST=$$PROD_SSH_REMOTE_HOST
-  # - export SSH_REMOTE_USER=$$PROD_SSH_REMOTE_USER
-  # - export SSH_PRIVATE_KEY=$$PROD_SSH_PRIVATE_KEY
-  # - export SSH_PRIVATE_KEY_PATH=$$PROD_SSH_PRIVATE_KEY_PATH
-  # - export SSH_LANDING_DIR=$$PROD_SSH_LANDING_DIR
-  # - export S3_BUCKET_NAME=$$PROD_S3_BUCKET_NAME
-  # - export S3_KEY_PREFIX=$$PROD_S3_KEY_PREFIX
-  # - export S3_ACCESS_KEY_ID=$$PROD_S3_ACCESS_KEY_ID
-  # - export S3_SECRET_ACCESS_KEY=$$PROD_S3_SECRET_ACCESS_KEY
-  # - export GA_S3_BUCKET_NAME=$$PROD_GA_S3_BUCKET_NAME
-  # - export GA_S3_KEY_PREFIX=$$PROD_GA_S3_KEY_PREFIX
-  # # - export GA_S3_ACCESS_KEY_ID=$$PROD_GA_S3_ACCESS_KEY_ID
-  # # - export GA_S3_SECRET_ACCESS_KEY=$$PROD_GA_S3_SECRET_ACCESS_KEY
-  # - export SLACK_WEBHOOK=$$PROD_SLACK_WEBHOOK
-  # - kd --delete --file kube/deployment.yml
-  # - kd -f kube/pvc.yml -f kube/secret.yml -f kube/deployment.yml
   environment:
     INSECURE_SKIP_TLS_VERIFY: true
     KUBE_NAMESPACE: dq-apps
@@ -167,35 +148,35 @@ steps:
     NATS_RAM_REQUEST: 3Gi
     # PROD_GA_S3_ACCESS_KEY_ID:
     #   from_secret: PROD_GA_S3_ACCESS_KEY_ID
-    PROD_GA_S3_BUCKET_NAME:
+    GA_S3_BUCKET_NAME:
       from_secret: PROD_GA_S3_BUCKET_NAME
-    PROD_GA_S3_KEY_PREFIX:
+    GA_S3_KEY_PREFIX:
       from_secret: PROD_GA_S3_KEY_PREFIX
     # PROD_GA_S3_SECRET_ACCESS_KEY:
     #   from_secret: PROD_GA_S3_SECRET_ACCESS_KEY
-    PROD_KUBE_SERVER:
+    KUBE_SERVER:
       from_secret: PROD_KUBE_SERVER
-    PROD_KUBE_TOKEN:
+    KUBE_TOKEN:
       from_secret: PROD_KUBE_TOKEN
-    PROD_S3_ACCESS_KEY_ID:
+    S3_ACCESS_KEY_ID:
       from_secret: PROD_S3_ACCESS_KEY_ID
-    PROD_S3_BUCKET_NAME:
+    S3_BUCKET_NAME:
       from_secret: PROD_S3_BUCKET_NAME
-    PROD_S3_KEY_PREFIX:
+    S3_KEY_PREFIX:
       from_secret: PROD_S3_KEY_PREFIX
-    PROD_S3_SECRET_ACCESS_KEY:
+    S3_SECRET_ACCESS_KEY:
       from_secret: PROD_S3_SECRET_ACCESS_KEY
-    PROD_SLACK_WEBHOOK:
+    SLACK_WEBHOOK:
       from_secret: PROD_SLACK_WEBHOOK
-    PROD_SSH_LANDING_DIR:
+    SSH_LANDING_DIR:
       from_secret: PROD_SSH_LANDING_DIR
-    PROD_SSH_PRIVATE_KEY:
+    SSH_PRIVATE_KEY:
       from_secret: PROD_SSH_PRIVATE_KEY
-    PROD_SSH_PRIVATE_KEY_PATH:
+    SSH_PRIVATE_KEY_PATH:
       from_secret: PROD_SSH_PRIVATE_KEY_PATH
-    PROD_SSH_REMOTE_HOST:
+    SSH_REMOTE_HOST:
       from_secret: PROD_SSH_REMOTE_HOST
-    PROD_SSH_REMOTE_USER:
+    SH_REMOTE_USER:
       from_secret: PROD_SSH_REMOTE_USER
   when:
     branch:
