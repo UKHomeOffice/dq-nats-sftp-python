@@ -1,128 +1,224 @@
-pipeline:
+global-variables:
+  vault-image: &vault-image quay.io/ukhomeofficedigital/hashicorp-vault:1.6.0
+  trivy-image: &trivy-image quay.io/ukhomeofficedigital/trivyscanner:b82
+  kd-image: &kd-image quay.io/ukhomeofficedigital/kd
 
-  build:
-    image: ukhomeoffice/drone-docker
-    repo: quay.io/ukhomeofficedigital/dq-nats-sftp-python
-    secrets: [ docker_username, docker_password ]
-    registry: quay.io
+kind: pipeline
+name: default
+type: kubernetes
+
+platform:
+  os: linux
+  arch: amd64
+
+x-anchors:
+  retrieve-acp-aws-secrets: &retrieve-acp-aws-secrets
+    # Retrive vault secrets
+    - vault read secret/dacc/dq/aws/acp/iam/$AWS_ID > aws_id.json
+    - GA_S3_ACCESS_KEY_ID=$(cat aws_id.json | grep access_key | awk -F ' ' '{print $2}')
+    - GA_S3_ACCESS_KEY_ID=$(echo -n $GA_S3_ACCESS_KEY_ID | base64)
+    - echo "export GA_S3_ACCESS_KEY_ID=$GA_S3_ACCESS_KEY_ID" > acp_keys.sh
+    - vault read secret/dacc/dq/aws/acp/iam/$AWS_KEY > aws_key.json
+    - GA_S3_SECRET_ACCESS_KEY=$(cat aws_key.json | grep secret_access | awk -F ' ' '{print $2}')
+    - GA_S3_SECRET_ACCESS_KEY=$(echo -n $GA_S3_SECRET_ACCESS_KEY | base64)
+    - echo "export GA_S3_SECRET_ACCESS_KEY=$GA_S3_SECRET_ACCESS_KEY" >> acp_keys.sh
+
+  deploy-to-k8s: &deploy-to-k8s
+    - source acp_keys.sh
+    - kd --delete --file kube/deployment.yml
+    - kd -f kube/pvc.yml -f kube/secret.yml -f kube/deployment.yml
+
+steps:
+- name: build
+  pull: if-not-exists
+  image: plugins/docker
+  settings:
     context: app
     dockerfile: app/Dockerfile
     force_tag: true
+    registry: quay.io
+    repo: quay.io/ukhomeofficedigital/dq-nats-sftp-python
     tags:
-      - ${DRONE_COMMIT_SHA}
-      - ${DRONE_BUILD_NUMBER}
-    when:
-      event: push
+    - ${DRONE_COMMIT_SHA}
+    - ${DRONE_BUILD_NUMBER}
+  environment:
+    DOCKER_PASSWORD:
+      from_secret: docker_password
+    DOCKER_USERNAME:
+      from_secret: docker_username
+  when:
+    event:
+    - push
 
-  deploy_to_dev:
-    image: quay.io/ukhomeofficedigital/kd
-    environment:
-      - KUBE_NAMESPACE=dq-apps-notprod
-      - INSECURE_SKIP_TLS_VERIFY=true
-      - NATS_PVC_SIZE=1Gi
-      - NATS_CPU_REQUEST=1
-      - NATS_CPU_LIMIT=1.5
-      - NATS_RAM_REQUEST=1Gi
-      - NATS_RAM_LIMIT=1.5Gi
-      # - CLAMAV_CPU_REQUEST=2
-      - CLAMAV_CPU_REQUEST=1
-      # - CLAMAV_CPU_LIMIT=2.5
-      - CLAMAV_CPU_LIMIT=1
-      # - CLAMAV_RAM_REQUEST=2Gi
-      - CLAMAV_RAM_REQUEST=1Gi
-      # - CLAMAV_RAM_LIMIT=3Gi
-      - CLAMAV_RAM_LIMIT=1Gi
+- name: trivy_scan
+  pull: if-not-exists
+  image: *trivy-image
+  commands:
+  - trivy --ignore-unfixed --exit-code 0 --no-progress quay.io/ukhomeofficedigital/dq-nats-sftp-python:${DRONE_COMMIT_SHA}
+  when:
+    branch:
+      exclude:
+      - master
+    event:
+    - push
 
-    commands:
-      - export KUBE_TOKEN=$$NOTPROD_KUBE_TOKEN
-      - export KUBE_SERVER=$$NOTPROD_KUBE_SERVER
-      - export SSH_REMOTE_HOST=$$NOTPROD_SSH_REMOTE_HOST
-      - export SSH_REMOTE_USER=$$NOTPROD_SSH_REMOTE_USER
-      - export SSH_PRIVATE_KEY=$$NOTPROD_SSH_PRIVATE_KEY
-      - export SSH_PRIVATE_KEY_PATH=$$NOTPROD_SSH_PRIVATE_KEY_PATH
-      - export SSH_LANDING_DIR=$$NOTPROD_SSH_LANDING_DIR
-      - export S3_BUCKET_NAME=$$NOTPROD_S3_BUCKET_NAME
-      - export S3_KEY_PREFIX=$$NOTPROD_S3_KEY_PREFIX
-      - export S3_ACCESS_KEY_ID=$$NOTPROD_S3_ACCESS_KEY_ID
-      - export S3_SECRET_ACCESS_KEY=$$NOTPROD_S3_SECRET_ACCESS_KEY
-      - export GA_S3_BUCKET_NAME=$$NOTPROD_GA_S3_BUCKET_NAME
-      - export GA_S3_KEY_PREFIX=$$NOTPROD_GA_S3_KEY_PREFIX
-      - export GA_S3_ACCESS_KEY_ID=$$NOTPROD_GA_S3_ACCESS_KEY_ID
-      - export GA_S3_SECRET_ACCESS_KEY=$$NOTPROD_GA_S3_SECRET_ACCESS_KEY
-      - export SLACK_WEBHOOK=$$NOTPROD_SLACK_WEBHOOK
-      - kd --delete --file kube/deployment.yml
-      - kd -f kube/pvc.yml -f kube/secret.yml -f kube/deployment.yml
-    secrets:
-      - NOTPROD_KUBE_TOKEN
-      - NOTPROD_KUBE_SERVER
-      - NOTPROD_SSH_REMOTE_HOST
-      - NOTPROD_SSH_REMOTE_USER
-      - NOTPROD_SSH_PRIVATE_KEY
-      - NOTPROD_SSH_PRIVATE_KEY_PATH
-      - NOTPROD_SSH_LANDING_DIR
-      - NOTPROD_S3_BUCKET_NAME
-      - NOTPROD_S3_KEY_PREFIX
-      - NOTPROD_S3_ACCESS_KEY_ID
-      - NOTPROD_S3_SECRET_ACCESS_KEY
-      - NOTPROD_GA_S3_BUCKET_NAME
-      - NOTPROD_GA_S3_KEY_PREFIX
-      - NOTPROD_GA_S3_ACCESS_KEY_ID
-      - NOTPROD_GA_S3_SECRET_ACCESS_KEY
-      - NOTPROD_SLACK_WEBHOOK
-    when:
-      event: push
+- name: retrieve_acp_secrets_dev
+  pull: if-not-exists
+  image: *vault-image
+  commands:
+    *retrieve-acp-aws-secrets
+  environment:
+    AWS_ID: ga-s3-access-key-id
+    AWS_KEY: ga-s3-secret-access-key
+    VAULT_ADDR:
+      from_secret: VAULT_ADDR_NOTPROD
+    VAULT_TOKEN:
+      from_secret: VAULT_TOKEN_NOTPROD
+  when:
+    event:
+    - push
 
-  deploy_to_production:
-    image: quay.io/ukhomeofficedigital/kd
-    environment:
-      - KUBE_NAMESPACE=dq-apps
-      - INSECURE_SKIP_TLS_VERIFY=true
-      - NATS_PVC_SIZE=5Gi
-      - NATS_CPU_REQUEST=2
-      - NATS_CPU_LIMIT=2.5
-      - NATS_RAM_REQUEST=3Gi
-      - NATS_RAM_LIMIT=4Gi
-      - CLAMAV_CPU_REQUEST=2
-      - CLAMAV_CPU_LIMIT=2.5
-      - CLAMAV_RAM_REQUEST=3Gi
-      - CLAMAV_RAM_LIMIT=4Gi
-    commands:
-      - export KUBE_TOKEN=$$PROD_KUBE_TOKEN
-      - export KUBE_SERVER=$$PROD_KUBE_SERVER
-      - export SSH_REMOTE_HOST=$$PROD_SSH_REMOTE_HOST
-      - export SSH_REMOTE_USER=$$PROD_SSH_REMOTE_USER
-      - export SSH_PRIVATE_KEY=$$PROD_SSH_PRIVATE_KEY
-      - export SSH_PRIVATE_KEY_PATH=$$PROD_SSH_PRIVATE_KEY_PATH
-      - export SSH_LANDING_DIR=$$PROD_SSH_LANDING_DIR
-      - export S3_BUCKET_NAME=$$PROD_S3_BUCKET_NAME
-      - export S3_KEY_PREFIX=$$PROD_S3_KEY_PREFIX
-      - export S3_ACCESS_KEY_ID=$$PROD_S3_ACCESS_KEY_ID
-      - export S3_SECRET_ACCESS_KEY=$$PROD_S3_SECRET_ACCESS_KEY
-      - export GA_S3_BUCKET_NAME=$$PROD_GA_S3_BUCKET_NAME
-      - export GA_S3_KEY_PREFIX=$$PROD_GA_S3_KEY_PREFIX
-      - export GA_S3_ACCESS_KEY_ID=$$PROD_GA_S3_ACCESS_KEY_ID
-      - export GA_S3_SECRET_ACCESS_KEY=$$PROD_GA_S3_SECRET_ACCESS_KEY
-      - export SLACK_WEBHOOK=$$PROD_SLACK_WEBHOOK
-      - kd --delete --file kube/deployment.yml
-      - kd -f kube/pvc.yml -f kube/secret.yml -f kube/deployment.yml
-    secrets:
-      - PROD_KUBE_TOKEN
-      - PROD_KUBE_SERVER
-      - PROD_SSH_REMOTE_HOST
-      - PROD_SSH_REMOTE_USER
-      - PROD_SSH_PRIVATE_KEY
-      - PROD_SSH_PRIVATE_KEY_PATH
-      - PROD_SSH_LANDING_DIR
-      - PROD_S3_BUCKET_NAME
-      - PROD_S3_KEY_PREFIX
-      - PROD_S3_ACCESS_KEY_ID
-      - PROD_S3_SECRET_ACCESS_KEY
-      - PROD_GA_S3_BUCKET_NAME
-      - PROD_GA_S3_KEY_PREFIX
-      - PROD_GA_S3_ACCESS_KEY_ID
-      - PROD_GA_S3_SECRET_ACCESS_KEY
-      - PROD_SLACK_WEBHOOK
-    when:
-      environment: production
-      branch: master
-      event: deployment
+- name: deploy_to_dev
+  pull: if-not-exists
+  image: *kd-image
+  commands:
+    *deploy-to-k8s
+  environment:
+    INSECURE_SKIP_TLS_VERIFY: true
+    KUBE_NAMESPACE: dq-apps-notprod
+    NATS_CPU_LIMIT: 1.5
+    NATS_CPU_REQUEST: 1
+    NATS_PVC_SIZE: 1Gi
+    NATS_RAM_LIMIT: 1.5Gi
+    NATS_RAM_REQUEST: 1Gi
+    GA_S3_BUCKET_NAME:
+      from_secret: NOTPROD_GA_S3_BUCKET_NAME
+    GA_S3_KEY_PREFIX:
+      from_secret: NOTPROD_GA_S3_KEY_PREFIX
+    KUBE_SERVER:
+      from_secret: NOTPROD_KUBE_SERVER
+    KUBE_TOKEN:
+      from_secret: NOTPROD_KUBE_TOKEN
+    S3_ACCESS_KEY_ID:
+      from_secret: NOTPROD_S3_ACCESS_KEY_ID
+    S3_BUCKET_NAME:
+      from_secret: NOTPROD_S3_BUCKET_NAME
+    S3_KEY_PREFIX:
+      from_secret: NOTPROD_S3_KEY_PREFIX
+    S3_SECRET_ACCESS_KEY:
+      from_secret: NOTPROD_S3_SECRET_ACCESS_KEY
+    SLACK_WEBHOOK:
+      from_secret: NOTPROD_SLACK_WEBHOOK
+    SSH_LANDING_DIR:
+      from_secret: NOTPROD_SSH_LANDING_DIR
+    SSH_PRIVATE_KEY:
+      from_secret: NOTPROD_SSH_PRIVATE_KEY
+    SSH_PRIVATE_KEY_PATH:
+      from_secret: NOTPROD_SSH_PRIVATE_KEY_PATH
+    SSH_REMOTE_HOST:
+      from_secret: NOTPROD_SSH_REMOTE_HOST
+    SSH_REMOTE_USER:
+      from_secret: NOTPROD_SSH_REMOTE_USER
+  when:
+    event:
+    - push
+
+- name: retrieve_acp_secrets_prod
+  pull: if-not-exists
+  image: *vault-image
+  commands:
+    *retrieve-acp-aws-secrets
+  environment:
+    AWS_ID: ga-s3-access-key-id
+    AWS_KEY: ga-s3-secret-access-key
+    VAULT_ADDR:
+      from_secret: VAULT_ADDR_PROD
+    VAULT_TOKEN:
+      from_secret: VAULT_TOKEN_PROD
+  when:
+    branch:
+    - master
+    event:
+    - promote
+    target:
+    - production
+
+- name: deploy_to_production
+  pull: if-not-exists
+  image: *kd-image
+  commands:
+    *deploy-to-k8s
+  environment:
+    INSECURE_SKIP_TLS_VERIFY: true
+    KUBE_NAMESPACE: dq-apps
+    NATS_CPU_LIMIT: 2.5
+    NATS_CPU_REQUEST: 2
+    NATS_PVC_SIZE: 5Gi
+    NATS_RAM_LIMIT: 4Gi
+    NATS_RAM_REQUEST: 3Gi
+    GA_S3_BUCKET_NAME:
+      from_secret: PROD_GA_S3_BUCKET_NAME
+    GA_S3_KEY_PREFIX:
+      from_secret: PROD_GA_S3_KEY_PREFIX
+    KUBE_SERVER:
+      from_secret: PROD_KUBE_SERVER
+    KUBE_TOKEN:
+      from_secret: PROD_KUBE_TOKEN
+    S3_ACCESS_KEY_ID:
+      from_secret: PROD_S3_ACCESS_KEY_ID
+    S3_BUCKET_NAME:
+      from_secret: PROD_S3_BUCKET_NAME
+    S3_KEY_PREFIX:
+      from_secret: PROD_S3_KEY_PREFIX
+    S3_SECRET_ACCESS_KEY:
+      from_secret: PROD_S3_SECRET_ACCESS_KEY
+    SLACK_WEBHOOK:
+      from_secret: PROD_SLACK_WEBHOOK
+    SSH_LANDING_DIR:
+      from_secret: PROD_SSH_LANDING_DIR
+    SSH_PRIVATE_KEY:
+      from_secret: PROD_SSH_PRIVATE_KEY
+    SSH_PRIVATE_KEY_PATH:
+      from_secret: PROD_SSH_PRIVATE_KEY_PATH
+    SSH_REMOTE_HOST:
+      from_secret: PROD_SSH_REMOTE_HOST
+    SH_REMOTE_USER:
+      from_secret: PROD_SSH_REMOTE_USER
+  when:
+    branch:
+    - master
+    event:
+    - promote
+    target:
+    - production
+
+- name: renew-vault-tokens
+  pull: if-not-exists
+  image: *vault-image
+  commands:
+    # Renew NotProd Drone Vault Token
+    - export VAULT_TOKEN=$${VAULT_TOKEN_NOTPROD}
+    - export VAULT_ADDR=$${VAULT_ADDR_NOTPROD}
+    - vault token renew > /dev/null
+    # Renew Prod Drone Vault Token
+    - export VAULT_TOKEN=$${VAULT_TOKEN_PROD}
+    - export VAULT_ADDR=$${VAULT_ADDR_PROD}
+    - vault token renew > /dev/null
+  environment:
+    VAULT_ADDR_NOTPROD:
+      from_secret: VAULT_ADDR_NOTPROD
+    VAULT_TOKEN_NOTPROD:
+      from_secret: VAULT_TOKEN_NOTPROD
+    VAULT_ADDR_PROD:
+      from_secret: VAULT_ADDR_PROD
+    VAULT_TOKEN_PROD:
+      from_secret: VAULT_TOKEN_PROD
+  when:
+    event:
+      - cron
+    cron:
+      - renew-vault-tokens
+
+services:
+  - name: docker
+    image: 340268328991.dkr.ecr.eu-west-2.amazonaws.com/acp/dind
