@@ -15,9 +15,13 @@ x-anchors:
   retrieve-acp-aws-secrets: &retrieve-acp-aws-secrets
     # Retrive vault secrets
     - vault read secret/dacc/dq/aws/acp/iam/$AWS_ID > aws_id.json
-    - echo "export GA_S3_ACCESS_KEY_ID=$(cat aws_id.json | grep access_key | awk -F ' ' '{print $2}')" > acp_keys.sh
+    - GA_S3_ACCESS_KEY_ID=$(cat aws_id.json | grep access_key | awk -F ' ' '{print $2}')
+    - GA_S3_ACCESS_KEY_ID=$(echo -n $GA_S3_ACCESS_KEY_ID | base64)
+    - echo "export GA_S3_ACCESS_KEY_ID=$GA_S3_ACCESS_KEY_ID" > acp_keys.sh
     - vault read secret/dacc/dq/aws/acp/iam/$AWS_KEY > aws_key.json
-    - echo "export GA_S3_SECRET_ACCESS_KEY=$(cat aws_key.json | grep secret_access | awk -F ' ' '{print $2}')" >> acp_keys.sh
+    - GA_S3_SECRET_ACCESS_KEY=$(cat aws_key.json | grep secret_access | awk -F ' ' '{print $2}')
+    - GA_S3_SECRET_ACCESS_KEY=$(echo -n $GA_S3_SECRET_ACCESS_KEY | base64)
+    - echo "export GA_S3_SECRET_ACCESS_KEY=$GA_S3_SECRET_ACCESS_KEY" >> acp_keys.sh
 
   deploy-to-k8s: &deploy-to-k8s
     - source acp_keys.sh
