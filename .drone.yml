@@ -182,7 +182,7 @@ steps:
       from_secret: PROD_SSH_PRIVATE_KEY_PATH
     SSH_REMOTE_HOST:
       from_secret: PROD_SSH_REMOTE_HOST
-    SH_REMOTE_USER:
+    SSH_REMOTE_USER:
       from_secret: PROD_SSH_REMOTE_USER
   when:
     branch:
