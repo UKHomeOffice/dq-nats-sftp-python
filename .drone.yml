@@ -91,14 +91,10 @@ steps:
     NATS_PVC_SIZE: 1Gi
     NATS_RAM_LIMIT: 1.5Gi
     NATS_RAM_REQUEST: 1Gi
-    # NOTPROD_GA_S3_ACCESS_KEY_ID:
-    #   from_secret: NOTPROD_GA_S3_ACCESS_KEY_ID
     GA_S3_BUCKET_NAME:
       from_secret: NOTPROD_GA_S3_BUCKET_NAME
     GA_S3_KEY_PREFIX:
       from_secret: NOTPROD_GA_S3_KEY_PREFIX
-    # NOTPROD_GA_S3_SECRET_ACCESS_KEY:
-    #   from_secret: NOTPROD_GA_S3_SECRET_ACCESS_KEY
     KUBE_SERVER:
       from_secret: NOTPROD_KUBE_SERVER
     KUBE_TOKEN:
@@ -160,14 +156,10 @@ steps:
     NATS_PVC_SIZE: 5Gi
     NATS_RAM_LIMIT: 4Gi
     NATS_RAM_REQUEST: 3Gi
-    # PROD_GA_S3_ACCESS_KEY_ID:
-    #   from_secret: PROD_GA_S3_ACCESS_KEY_ID
     GA_S3_BUCKET_NAME:
       from_secret: PROD_GA_S3_BUCKET_NAME
     GA_S3_KEY_PREFIX:
       from_secret: PROD_GA_S3_KEY_PREFIX
-    # PROD_GA_S3_SECRET_ACCESS_KEY:
-    #   from_secret: PROD_GA_S3_SECRET_ACCESS_KEY
     KUBE_SERVER:
       from_secret: PROD_KUBE_SERVER
     KUBE_TOKEN:
