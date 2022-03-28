@@ -33,7 +33,11 @@ RUN groupadd -r runner && \
 
 # Install script dependencies
 RUN yum update -y
-RUN yum install -y wget make gcc openssl-devel zlib-devel pcre-devel bzip2-devel libffi-devel epel-release python3
+
+RUN yum install -y wget make gcc openssl-devel zlib-devel pcre-devel bzip2-devel \
+    libffi-devel epel-release python3 && \
+    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+    python3 get-pip.py
 
 # Install modules with pip
 RUN pip3 install --no-cache-dir -r /tmp/NATS/scripts/packages.txt
