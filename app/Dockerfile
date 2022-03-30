@@ -18,6 +18,7 @@ RUN mkdir -p \
              /home/runner/.pm2 \
              /home/runner/.ssh
 
+
 COPY packages.txt /tmp/NATS/scripts
 COPY ecosystem.config.js /tmp/NATS/scripts
 COPY docker-entrypoint.sh /
@@ -55,7 +56,7 @@ USER ${USERMAP_UID}
 
 WORKDIR /NATS
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
+ENTRYPOINT ["sh", "/docker-entrypoint.sh"]
 
 # Start PM2
 CMD pm2-docker /NATS/scripts/ecosystem.config.js  -- --config $SSH_REMOTE_HOST $SSH_REMOTE_USER $SSH_PRIVATE_KEY_PATH $SSH_LANDING_DIR $S3_BUCKET_NAME \
