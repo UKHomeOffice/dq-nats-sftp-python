@@ -1,6 +1,6 @@
 global-variables:
   vault-image: &vault-image quay.io/ukhomeofficedigital/hashicorp-vault:1.6.0
-  trivy-image: &trivy-image quay.io/ukhomeofficedigital/trivyscanner:b82
+  trivy-image: &trivy-image quay.io/ukhomeofficedigital/trivyscanner:master
   kd-image: &kd-image quay.io/ukhomeofficedigital/kd
 
 kind: pipeline
