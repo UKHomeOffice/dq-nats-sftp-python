@@ -1,4 +1,4 @@
-FROM alpine:3.15.3
+FROM quay.io/ukhomeofficedigital/dq-alpine:master
 
 ENV USERMAP_UID 1000
 ENV RUNNER_UID 1001
