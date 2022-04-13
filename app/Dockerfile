@@ -46,6 +46,9 @@ RUN apk add --update nodejs npm
 RUN npm install -g pm2 && \
     npm update -g pm2
 
+RUN apk update --quiet \
+    && apk upgrade --quiet
+
 VOLUME ["/NATS"]
 RUN chown -R runner:runner /NATS
 
