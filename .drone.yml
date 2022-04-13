@@ -54,7 +54,7 @@ steps:
   pull: if-not-exists
   image: *trivy-image
   commands:
-  - trivy --ignore-unfixed --exit-code 1 --no-progress quay.io/ukhomeofficedigital/dq-nats-sftp-python:${DRONE_COMMIT_SHA}
+  - trivy image --ignore-unfixed --exit-code 1 --no-progress quay.io/ukhomeofficedigital/dq-nats-sftp-python:${DRONE_COMMIT_SHA}
   when:
     branch:
       exclude:
