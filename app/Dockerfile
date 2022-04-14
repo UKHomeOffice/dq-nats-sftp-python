@@ -45,7 +45,7 @@ RUN apk add --update py-pip && \
 RUN apk add --update nodejs npm
 RUN npm install -g pm2 && \
     npm update -g pm2 \
-    npm uprade -g async
+    npm upgrade -g async
 
 RUN apk update --quiet \
     && apk upgrade --quiet
