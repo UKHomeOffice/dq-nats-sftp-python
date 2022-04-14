@@ -5,9 +5,6 @@ ENV RUNNER_UID 1001
 ENV DOCKER_UID 1002
 ENV PYTHONPATH="$PYTHONPATH:/NATS"
 
-RUN apk update --quiet \
-    && apk upgrade --quiet
-
 # Setup folder structure and copy files
 RUN mkdir -p \
              /tmp/NATS/scripts \
