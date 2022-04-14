@@ -42,10 +42,11 @@ RUN apk add --update py-pip && \
     apk add --update py3-cryptography
 
 # Install PM2
-RUN apk add --update nodejs npm
+RUN apk add --update npm
+RUN apk add nodejs-current
 RUN npm install -g pm2 && \
-    npm update -g pm2 \
-    npm upgrade -g async
+    npm update -g pm2
+
 
 RUN apk update --quiet \
     && apk upgrade --quiet
@@ -69,3 +70,6 @@ CMD pm2-docker /NATS/scripts/ecosystem.config.js  -- --config $SSH_REMOTE_HOST $
 
 # Save PM2 configuration
 RUN pm2 save
+
+RUN node --version
+RUN npm --version
