@@ -42,8 +42,7 @@ RUN apk add --update py-pip && \
     apk add --update py3-cryptography
 
 # Install PM2
-RUN apk add --update npm
-RUN apk add nodejs-current
+RUN apk add --update nodejs-current npm
 RUN npm install -g pm2 && \
     npm update -g pm2
 
