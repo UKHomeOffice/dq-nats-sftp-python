@@ -1,6 +1,8 @@
-FROM centos:8
+FROM quay.io/ukhomeofficedigital/dq-alpine:master
 
 ENV USERMAP_UID 1000
+ENV RUNNER_UID 1001
+ENV DOCKER_UID 1002
 ENV PYTHONPATH="$PYTHONPATH:/NATS"
 
 # Setup folder structure and copy files
@@ -16,6 +18,7 @@ RUN mkdir -p \
              /home/runner/.pm2 \
              /home/runner/.ssh
 
+
 COPY packages.txt /tmp/NATS/scripts
 COPY ecosystem.config.js /tmp/NATS/scripts
 COPY docker-entrypoint.sh /
@@ -23,29 +26,29 @@ ADD bin /tmp/NATS/bin
 ADD scripts /tmp/NATS/scripts
 
 # Add user
-RUN groupadd -r runner && \
-    useradd --no-log-init -u $USERMAP_UID -r -g runner runner && \
-    groupadd docker && \
-    usermod -aG docker runner && \
+RUN addgroup -g $RUNNER_UID runner && \
+    adduser -u $USERMAP_UID -G runner -D runner && \
+    addgroup -g $DOCKER_UID docker && \
     chown -R runner:runner /NATS && \
     chown -R runner:runner /home/runner/.pm2 && \
     chown -R runner:runner /home/runner/.ssh
 
 # Install script dependencies
-RUN yum update -y
-
-RUN yum install -y wget make gcc openssl-devel zlib-devel pcre-devel bzip2-devel \
-    libffi-devel epel-release python3 && \
-    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
-    python3 get-pip.py
-
-# Install modules with pip
-RUN pip3 install --no-cache-dir -r /tmp/NATS/scripts/packages.txt
+RUN apk add --update py-pip && \
+    apk add --update py3-boto3 && \
+    apk add --update py3-paramiko && \
+    apk add --update py3-requests && \
+    apk add --update py3-schedule && \
+    apk add --update py3-cryptography
 
 # Install PM2
-RUN curl -sL https://raw.githubusercontent.com/nodesource/distributions/master/rpm/setup_12.x -o setup_12.x && bash setup_12.x && rm setup_12.x && \
-    yum install -y nodejs && \
-    npm install -g pm2
+RUN apk add --update nodejs npm
+RUN npm install -g pm2 && \
+    npm update -g pm2
+
+
+RUN apk update --quiet \
+    && apk upgrade --quiet
 
 VOLUME ["/NATS"]
 RUN chown -R runner:runner /NATS
@@ -57,7 +60,7 @@ USER ${USERMAP_UID}
 
 WORKDIR /NATS
 
-ENTRYPOINT ["/docker-entrypoint.sh"]
+ENTRYPOINT ["sh", "/docker-entrypoint.sh"]
 
 # Start PM2
 CMD pm2-docker /NATS/scripts/ecosystem.config.js  -- --config $SSH_REMOTE_HOST $SSH_REMOTE_USER $SSH_PRIVATE_KEY_PATH $SSH_LANDING_DIR $S3_BUCKET_NAME \
@@ -66,3 +69,6 @@ CMD pm2-docker /NATS/scripts/ecosystem.config.js  -- --config $SSH_REMOTE_HOST $
 
 # Save PM2 configuration
 RUN pm2 save
+
+RUN node --version
+RUN npm --version
