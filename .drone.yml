@@ -112,7 +112,7 @@ steps:
     SSH_LANDING_DIR:
       from_secret: NOTPROD_SSH_LANDING_DIR
     SSH_PRIVATE_KEY:
-      from_secret: NOTPROD_SSH_PRIVATE_KEY
+      from_secret: NOTPROD_SSH_PRIVATE_KEY_NEW
     SSH_PRIVATE_KEY_PATH:
       from_secret: NOTPROD_SSH_PRIVATE_KEY_PATH
     SSH_REMOTE_HOST:
