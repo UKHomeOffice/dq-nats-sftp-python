@@ -1,5 +1,5 @@
 global-variables:
-  vault-image: &vault-image quay.io/ukhomeofficedigital/hashicorp-vault:1.6.0
+  vault-image: &vault-image ocker.digital.homeoffice.gov.uk/dq/dq-vault-awscli:1.41
   trivy-image: &trivy-image quay.io/ukhomeofficedigital/trivyscanner:master
   kd-image: &kd-image quay.io/ukhomeofficedigital/kd
 
