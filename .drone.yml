@@ -1,5 +1,5 @@
 global-variables:
-  vault-image: &vault-image ocker.digital.homeoffice.gov.uk/dq/dq-vault-awscli:1.41
+  vault-image: &vault-image docker.digital.homeoffice.gov.uk/dq/dq-vault-awscli:1.43
   trivy-image: &trivy-image quay.io/ukhomeofficedigital/trivyscanner:master
   kd-image: &kd-image quay.io/ukhomeofficedigital/kd
 
