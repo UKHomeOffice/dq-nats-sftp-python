@@ -36,8 +36,8 @@ x-anchors:
     # delete old iam key &id
     - aws iam delete-access-key --access-key-id $OLD_AWS_ACCESS_KEY_ID --user-name $APP_USER_NAME
     # encode new key and id
-    - echo "export NEW_AWS_ACCESS_KEY_ID=$(echo -n $NEW_AWS_ACCESS_KEY_ID | base64)" > new_iam_secret.sh
-    - echo "export NEW_AWS_SECRET_ACCESS_KEY=$(echo -n $NEW_AWS_SECRET_ACCESS_KEY | base64)" >> new_iam_secret.sh
+    - echo "export S3_ACCESS_KEY_ID=$(echo -n $NEW_AWS_ACCESS_KEY_ID | base64)" > new_iam_secret.sh
+    - echo "export S3_SECRET_ACCESS_KEY=$(echo -n $NEW_AWS_SECRET_ACCESS_KEY | base64)" >> new_iam_secret.sh
 
   retrieve-acp-aws-secrets: &retrieve-acp-aws-secrets
     # Retrive vault secrets
