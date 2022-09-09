@@ -53,7 +53,7 @@ x-anchors:
   deploy-to-k8s: &deploy-to-k8s
     - source acp_keys.sh
     - source new_iam_secret.sh
-    # - kd --delete --file kube/deployment.yml
+    - kd --delete --file kube/deployment.yml
     - kd -f kube/pvc.yml -f kube/secret.yml -f kube/deployment.yml
 
 steps:
