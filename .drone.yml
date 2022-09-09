@@ -23,7 +23,7 @@ x-anchors:
     - export AWS_SECRET_ACCESS_KEY=$(cat aws_creds.json | grep secret_key | awk -F ' ' '{print $2}')
     - export AWS_DEFAULT_REGION=eu-west-2
     # Since AWS is eventually consistent we need to sleep a little while so the AWS key is created and made available
-    - sleep 10
+    - sleep 20
     # get app key id from ssm
     - export OLD_AWS_ACCESS_KEY_ID=$(aws ssm get-parameters --name $SSM_KEY_ID --query "Parameters[*].{Value:Value}" --with-decryption | grep Value | awk -F ' ' '{print $2}' | tr -d '"')
     # generate new key & id for app user
