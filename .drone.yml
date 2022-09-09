@@ -53,7 +53,7 @@ x-anchors:
   deploy-to-k8s: &deploy-to-k8s
     - source acp_keys.sh
     - source new_iam_secret.sh
-    - kd --delete --file kube/deployment.yml
+    # - kd --delete --file kube/deployment.yml
     - kd -f kube/pvc.yml -f kube/secret.yml -f kube/deployment.yml
 
 steps:
@@ -137,6 +137,7 @@ steps:
     NATS_PVC_SIZE: 1Gi
     NATS_RAM_LIMIT: 1.5Gi
     NATS_RAM_REQUEST: 1Gi
+    ENV: notprod
     GA_S3_BUCKET_NAME:
       from_secret: NOTPROD_GA_S3_BUCKET_NAME
     GA_S3_KEY_PREFIX:
@@ -220,6 +221,7 @@ steps:
     NATS_PVC_SIZE: 5Gi
     NATS_RAM_LIMIT: 4Gi
     NATS_RAM_REQUEST: 3Gi
+    ENV: prod
     GA_S3_BUCKET_NAME:
       from_secret: PROD_GA_S3_BUCKET_NAME
     GA_S3_KEY_PREFIX:
