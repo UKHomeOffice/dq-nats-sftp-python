@@ -3,6 +3,7 @@ global-variables:
   trivy-image: &trivy-image quay.io/ukhomeofficedigital/trivyscanner:master
   kd-image: &kd-image quay.io/ukhomeofficedigital/kd
 
+
 kind: pipeline
 name: default
 type: kubernetes
@@ -82,7 +83,7 @@ steps:
   pull: if-not-exists
   image: *trivy-image
   commands:
-  - trivy image --ignore-unfixed --exit-code 0 --no-progress quay.io/ukhomeofficedigital/dq-nats-sftp-python:${DRONE_COMMIT_SHA}
+  - trivy image --exit-code 0 --no-progress quay.io/ukhomeofficedigital/dq-nats-sftp-python:${DRONE_COMMIT_SHA}
   when:
     branch:
       exclude:
