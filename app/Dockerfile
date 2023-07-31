@@ -45,7 +45,8 @@ RUN apk add --update py-pip && \
 # Install PM2
 RUN apk add --update nodejs npm
 RUN npm install -g pm2 && \
-    npm update -g pm2
+    npm update -g pm2 && \
+    npm update && npm i semver --force
 
 RUN npm i semver --force
 
