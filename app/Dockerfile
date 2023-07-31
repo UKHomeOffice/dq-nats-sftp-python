@@ -48,7 +48,7 @@ RUN npm install -g pm2 && \
     npm update -g pm2 && \
     npm update && npm i semver --force
 
-RUN npm i semver --force
+RUN npm install -g semver --force
 
 #New parameter based on alpine 3.18
 RUN apk update --quiet \
