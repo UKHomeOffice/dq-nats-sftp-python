@@ -45,7 +45,7 @@ RUN apk add --update py-pip && \
 # Install PM2
 RUN apk add --update nodejs npm
 RUN npm install -g pm2 && \
-    npm install semver
+    npm install semver && \
     npm --prefix /tmp/NATS/scripts run && npm install
 
 #New parameter based on alpine 3.18
