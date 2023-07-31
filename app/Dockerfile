@@ -20,6 +20,7 @@ RUN mkdir -p \
 
 
 COPY packages.txt /tmp/NATS/scripts
+COPY package.json /tmp/NATS/scripts
 COPY ecosystem.config.js /tmp/NATS/scripts
 COPY docker-entrypoint.sh /
 ADD bin /tmp/NATS/bin
@@ -44,8 +45,7 @@ RUN apk add --update py-pip && \
 # Install PM2
 RUN apk add --update nodejs npm
 RUN npm install -g pm2 && \
-    npm update -g pm2 && \
-    npm install -g npm-check-updates && ncu -a && npm install
+    npm update -g pm2 && 
 
 #New parameter based on alpine 3.18
 RUN apk update --quiet \
