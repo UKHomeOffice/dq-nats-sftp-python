@@ -53,6 +53,10 @@ RUN apk add --update nodejs npm && \
 RUN apk update --quiet \
     && apk upgrade --quiet
 
+RUN npm uninstall -g semver && \
+    npm uninstall semver && \
+    npm install -g semver@7.5.2 
+    
 VOLUME ["/NATS"]
 
 RUN chown -R runner:runner /NATS
@@ -63,10 +67,6 @@ chmod +x /docker-entrypoint.sh
 USER ${USERMAP_UID}
 
 WORKDIR /NATS
-
-RUN npm uninstall -g semver && \
-    npm uninstall semver && \
-    npm install -g semver@7.5.2 
     
 ENTRYPOINT ["sh", "/docker-entrypoint.sh"]
 
