@@ -6,7 +6,7 @@
   "directories": {
     "test": "test"
   },
-  "dependencies": {
+  "overrides": {
     "semver": "^7.5.4"
   },
   "scripts": {
