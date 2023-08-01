@@ -45,7 +45,6 @@ RUN apk add --update py-pip && \
 
 # Install PM2
 RUN apk add --update nodejs npm && \
-    npm install -g semver@7.5.4 --no-package-lock && \ 
     npm install -g pm2 && \
     npm update -g pm2
     
@@ -65,6 +64,10 @@ USER ${USERMAP_UID}
 
 WORKDIR /NATS
 
+RUN npm uninstall -g semver && \
+    npm uninstall semver && \
+    npm install -g semver@7.5.2 
+    
 ENTRYPOINT ["sh", "/docker-entrypoint.sh"]
 
 # Start PM2
