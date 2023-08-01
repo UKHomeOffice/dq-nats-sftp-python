@@ -54,8 +54,7 @@ RUN apk update --quiet \
     && apk upgrade --quiet
 
 RUN npm uninstall -g semver@6.3.0 && \
-    npm uninstall semver@6.3.0 && \
-    npm install -g semver@7.5.2 
+    npm install -g semver@7.5.4
     
 VOLUME ["/NATS"]
 
