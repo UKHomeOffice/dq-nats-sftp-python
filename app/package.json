@@ -7,7 +7,8 @@
     "test": "test"
   },
   "overrides": {
-    "semver": "^7.5.4"
+    "semver": "^7.5.4",
+    "axios": "^1.6.0"
   },
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1"

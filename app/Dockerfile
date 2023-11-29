@@ -5,6 +5,7 @@ ENV RUNNER_UID 1001
 ENV DOCKER_UID 1002
 ENV PYTHONPATH="$PYTHONPATH:/NATS"
 
+
 # Setup folder structure and copy files
 RUN mkdir -p \
              /tmp/NATS/scripts \
@@ -46,7 +47,7 @@ RUN apk add --update py-pip && \
 # Install PM2
 RUN apk add --update nodejs npm && \
     npm install -g pm2 && \
-    npm update -g pm2
+    npm update -g pm2 
     
 
 #New parameter based on alpine 3.18
@@ -54,7 +55,9 @@ RUN apk update --quiet \
     && apk upgrade --quiet
 
 RUN npm uninstall -g semver@6.3.0 && \
-    npm install -g semver@7.5.4
+    npm install -g semver@7.5.4 \
+    npm uninstall -g axios && \
+    npm install -g axios@1.6.0
     
 VOLUME ["/NATS"]
 
