@@ -1,4 +1,4 @@
-FROM alpine:3.18.3
+FROM alpine:3.18.7
 
 ENV USERMAP_UID 1000
 ENV RUNNER_UID 1001
@@ -57,7 +57,9 @@ RUN apk update --quiet \
 RUN npm uninstall -g semver@6.3.0 && \
     npm install -g semver@7.5.4 \
     npm uninstall -g axios && \
-    npm install -g axios@1.6.0
+    npm install -g axios@1.7.4
+#Upgrade setup tools to fix vulnerabilities
+RUN pip install -U setuptools==70.0.0
     
 VOLUME ["/NATS"]
 
