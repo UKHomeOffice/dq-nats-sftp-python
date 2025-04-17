@@ -61,17 +61,6 @@ RUN apk update --quiet \
 #Upgrade setup tools to fix vulnerabilities
 RUN pip install -U setuptools==70.0.0
 
-#New packages available to address security vulnerabilities
-RUN apk update && apk add --upgrade \
-    libcrypto3 \
-    libssl3 \
-    libexpat \
-    musl \
-    musl-utils \
-    python3 \
-    python3-pyc \
-    python3-pycache-pyc0 \
-    xz-libs
 
 
 VOLUME ["/NATS"]
