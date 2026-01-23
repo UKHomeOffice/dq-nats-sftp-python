@@ -54,7 +54,10 @@ RUN apk add --update nodejs npm && \
 RUN apk update --quiet \
     && apk upgrade --quiet
 
-RUN pip install -U setuptools
+# Upgrade force wheel to latest (or pin exactly to 0.46.2+)
+RUN pip install --no-cache-dir -U pip \
+    && pip install --no-cache-dir --upgrade --force-reinstall "wheel==0.46.2" setuptools \
+    && pip show wheel
 
 #New packages available to address security vulnerabilities
 RUN apk update && apk add --upgrade \
@@ -66,8 +69,7 @@ RUN apk update && apk add --upgrade \
     python3 \
     python3-pyc \
     python3-pycache-pyc0 \
-    xz-libs
-
+    xz-libs 
 
 VOLUME ["/NATS"]
 
